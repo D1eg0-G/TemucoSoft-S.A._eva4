@@ -1,0 +1,355 @@
+/* Documents.css */
+
+:root {
+  --cesfam-blue: #1e3a8a;
+  --cesfam-orange: #f97316;
+  --cesfam-green: #16a34a; /* Agregado para el botón descargar */
+  --bg-input: #ffffff;
+  --border-light: #e2e8f0;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+}
+
+.documents-container {
+  padding: 30px;
+  background-color: #f8fafc;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- HEADER, TABS & TOOLBAR --- */
+.doc-header-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+.page-title {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  font-weight: 800;
+  margin: 0;
+}
+.tabs-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.tab-btn {
+  background: white;
+  border: 1px solid var(--border-light);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  background: #f1f5f9;
+}
+.tab-btn.active {
+  background-color: var(--cesfam-blue);
+  color: white;
+  border-color: var(--cesfam-blue);
+}
+.counter-badge {
+  background: #f1f5f9;
+  color: var(--text-soft);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.doc-toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.search-group {
+  position: relative;
+  flex-grow: 1;
+  min-width: 200px;
+}
+.search-icon-input {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+}
+.search-group input {
+  width: 100%;
+  padding: 10px 10px 10px 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  outline: none;
+  box-sizing: border-box;
+  background-color: #ffffff;
+
+}
+.filter-select {
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  background: white;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+}
+.btn-search {
+  background-color: var(--cesfam-blue);
+  color: white;
+  border: none;
+  padding: 0 25px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-upload {
+  background-color: var(--cesfam-orange);
+  color: white;
+  border: none;
+  padding: 0 25px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-upload:hover {
+  background-color: #ea580c;
+}
+
+/* --- LISTA --- */
+.doc-list-container {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Para empujar el footer abajo si hay pocos items */
+}
+.list-title {
+  font-size: 1.1rem;
+  color: var(--text-main);
+  margin-bottom: 15px;
+}
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.doc-row {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  display: grid;
+  /* CAMBIO: Aumenté la última columna a 260px para que quepan 3 botones */
+  grid-template-columns: 30px 50px 2fr 1.5fr 1fr 1fr 260px;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s;
+}
+
+.doc-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Columnas de contenido */
+.file-icon-bg {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.file-icon-bg.red {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.file-icon-bg.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.file-icon-bg.blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.doc-name {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  display: block;
+}
+.doc-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.type-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.type-badge.red {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.type-badge.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.type-badge.blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.size-text {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.col-uploader {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.uploader-avatar {
+  width: 35px;
+  height: 35px;
+  background: #e2e8f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+.uploader-details {
+  display: flex;
+  flex-direction: column;
+}
+.uploader-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.uploader-role {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.date-badge {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.category-pill {
+  background: #f1f5f9;
+  color: var(--text-soft);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+/* --- BOTONES DE ACCIÓN (3 Botones) --- */
+.col-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem; /* Un poco más pequeño para que quepan 3 */
+  font-weight: 600;
+  color: var(--text-soft);
+  transition: color 0.2s;
+  padding: 5px;
+}
+
+/* Colores Hover */
+.action-btn.download:hover {
+  color: var(--cesfam-green);
+}
+.action-btn.edit:hover {
+  color: var(--cesfam-blue);
+}
+.action-btn.delete:hover {
+  color: #ef4444;
+}
+
+/* --- FOOTER / PAGINACIÓN --- */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  margin-top: auto; /* Empuja al fondo */
+  border-top: 1px solid var(--border-light);
+}
+
+.showing-text {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.pagination {
+  display: flex;
+  gap: 5px;
+}
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-light);
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+.page-btn.active {
+  background-color: var(--cesfam-orange);
+  color: white;
+  border-color: var(--cesfam-orange);
+}
+.page-btn:hover:not(.active) {
+  background-color: #f1f5f9;
+}
+/* Busca o agrega esta clase para los checkboxes */
+.col-check input[type="checkbox"] {
+  /* 1. Forza el modo claro para este elemento (fondo blanco) */
+  color-scheme: light; 
+  
+  /* 2. Color del "tick" o marca cuando está activo (Azul Cesfam) */
+  accent-color: var(--cesfam-blue); 
+  
+  /* 3. Ajustes visuales opcionales */
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+} 

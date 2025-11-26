@@ -1,0 +1,202 @@
+/* Sidebar.css */
+:root {
+  --bg-sidebar: #0f172a;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --cesfam-blue: #1e3a8a;
+  --cesfam-orange: #f97316;
+  --bg-hover: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar {
+  height: 95vh;
+  background-color: var(--bg-sidebar);
+  color: var(--text-primary);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  transition: width 0.4s ease-in-out;
+  margin: 20px 0 20px 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-right: 3px solid var(--cesfam-blue);
+  overflow: hidden;
+}
+
+.sidebar.expanded { width: 260px; }
+.sidebar.collapsed { width: 70px; align-items: center; }
+
+/* --- Header --- */
+.sidebar-header {
+  display: flex;
+  /* Cambiamos align-items para que el botón quede arriba alineado con el logo */
+  align-items: flex-start; 
+  justify-content: space-between;
+  margin-bottom: 30px;
+  /* Eliminamos height fija para dejar que crezca con el logo */
+  min-height: 40px;
+  position: relative;
+}
+
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: #ffffff; /* Icono blanco */
+  cursor: pointer;
+  z-index: 10; /* Asegura que esté clickeable por encima de todo */
+}
+
+/* Nuevo contenedor para apilar Logo y Texto verticalmente */
+.brand-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Espacio entre el logo y el texto */
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+}
+.sidebar.collapsed .brand-container {
+  margin-right: 0;
+}
+/* Estilos para la imagen del logo */
+/* 3. Estilos del Logo */
+.sidebar-logo {
+  width: 90px; /* Un poco más grande para destacar */
+  height: 90px;
+  object-fit: cover; /* Asegura que la imagen llene el círculo */
+  background: white; /* Fondo blanco para que el logo transparente resalte */
+  border-radius: 50%; /* Círculo perfecto */
+
+}
+
+.logo-text {
+  font-size: 1.1rem; /* Un poco más pequeño para que quepa mejor */
+  font-weight: 800;
+  margin: 5px 0 0 0;
+  color: #ffffff !important; /* BLANCO PURO IMPERATIVO */
+  text-align: center;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  /* Pequeño ajuste para alinear con la parte superior del logo */
+  margin-top: 5px; 
+}
+
+/* --- NEW USER PROFILE SECTION (Top) --- */
+.user-profile-top {
+  display: flex;
+  align-items: center;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(252, 252, 252, 0.1);
+  width: 100%;
+}
+.sidebar.collapsed .user-profile-top {
+  justify-content: center;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.profile-img {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-details {
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.username {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff !important; /* BLANCO PURO */
+  white-space: nowrap;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: #94a3b8 !important; /* Gris claro legible */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-chevron {
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* --- Navigation --- */
+.nav-section { flex-grow: 1; width: 100%; }
+
+.section-label {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav-list { list-style: none; padding: 0; margin: 0; }
+
+.nav-item {
+  margin-bottom: 5px;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: all 0.3s;
+  height: 45px;
+  box-sizing: border-box;
+}
+
+.nav-item.active .nav-link {
+  background-color: var(--cesfam-orange);
+  color: white;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.nav-item:not(.active) .nav-link:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar.collapsed .nav-link { justify-content: center; padding: 0; }
+
+.link-text {
+  margin-left: 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}

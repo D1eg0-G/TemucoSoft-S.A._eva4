@@ -1,0 +1,36 @@
+/* --- App.css --- */
+
+/* 1. Reset básico para asegurar pantalla completa sin bordes extraños */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0f172a; /* Color de fondo oscuro (coincide con el sidebar) */
+  overflow: hidden; /* Evita doble barra de scroll */
+  font-family: 'Inter', sans-serif;
+}
+
+/* 2. Contenedor Principal (Layout) */
+.app-container {
+  display: flex;          /* Pone Sidebar y Dashboard lado a lado */
+  width: 100vw;           /* Fuerza el ancho al 100% de la ventana */
+  height: 100vh;          /* Fuerza el alto al 100% de la ventana */
+  background-color: #0f172a; /* Fondo base oscuro */
+  box-sizing: border-box;
+}
+
+/* 3. Envoltorio del Dashboard */
+.content-wrapper {
+  flex: 1;                /* MAGIA: Ocupa todo el espacio restante a la derecha */
+  display: flex;          /* Para asegurar que el Dashboard interno se estire */
+  flex-direction: column;
+  
+  /* Márgenes para crear el efecto "flotante" */
+  margin: 20px 20px 20px 0; /* Arriba, Derecha, Abajo, Izquierda (0 porque el sidebar ya tiene margen) */
+  
+  border-radius: 20px;    /* Bordes redondeados */
+  overflow: hidden;       /* Recorta el contenido para respetar los bordes redondeados */
+  background-color: #f1f5f9; /* Fondo claro base para el área de contenido */
+  position: relative;
+}
