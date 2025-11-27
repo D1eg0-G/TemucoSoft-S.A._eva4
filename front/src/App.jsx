@@ -1,24 +1,49 @@
-// src/App.jsx
-import React from 'react'
-import './App.css' 
-import Sidebar from './Sidebar' 
-import Dashboard from './Dashboard'
-import GestionUser from './Gestion_user.jsx'
-import Documents from './Documentos.jsx'
-import Comunicado from './Comunicado.jsx'
+import React, { useState } from 'react';
+import './App.css';
+
+// --- IMPORTACIÓN DE COMPONENTES ---
+import Sidebar from './Sidebar';
+import Header from './Header';
+import Dashboard from './Dashboard';
+import SalesPOS from './SalesPOS';
+
+// Importa tus otros módulos aquí cuando los adaptes:
+// import Documents from './Documents';
+// import UserManagement from './UserManagement';
+// import Communications from './Communications';
 
 function App() {
+  // Estado para controlar la navegación. Inicializa en 'Dashboard'
+  const [currentPage, setCurrentPage] = useState('Dashboard');
+
   return (
     <div className="app-container">
-      {/* El Sidebar tiene sus propios márgenes definidos en Sidebar.css */}
-      <Sidebar />
       
-      {/* Contenedor que se expandirá para llenar el resto de la pantalla */}
+      {/* 1. PASAMOS LA FUNCIÓN DE NAVEGACIÓN AL SIDEBAR */}
+      <Sidebar 
+        activePage={currentPage} 
+        onNavigate={setCurrentPage} 
+      />
+      
       <div className="content-wrapper">
-          <Documents/>
+          
+          <Header title={currentPage} />
+          
+          <div className="main-content-scroll">
+            
+            {/* LÓGICA DE RENDERIZADO CONDICIONAL */}
+            {currentPage === 'Dashboard' && <Dashboard />}
+            {currentPage === 'Ventas' && <SalesPOS />}
+            
+            {/* Agrega aquí los otros casos cuando tengas los archivos listos: */}
+            {/* {currentPage === 'Inventario' && <Inventory />} */}
+            {/* {currentPage === 'Pedidos' && <Orders />} */}
+
+          </div>
+
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

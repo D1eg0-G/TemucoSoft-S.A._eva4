@@ -1,91 +1,85 @@
-// Sidebar.jsx
 import React, { useState } from 'react';
 import './Sidebar.css';
-import logoImg from '/logo.png';
+import logo from '/Logo_v.png'; 
 import { 
-  Menu, 
-  Home,           // Dashboard
-  MessageCircle,  // Comunicados
-  Calendar,       // Calendario
-  Stethoscope,    // Licencias Médicas
-  FileText,       // Documentos
-  Briefcase,      // Días Administrativos
-  Plane,          // Solicitud Vacaciones
-  UserCog,        // Gestión Usuarios
-  ChevronDown 
+  LayoutDashboard, 
+  ShoppingCart,   // Ventas
+  Package,        // Inventario/Productos
+  ShoppingBag,    // Compras
+  Truck,          // Proveedores
+  ClipboardList,  // Pedidos
+  Users,          // Usuarios
+  Settings, 
+  LogOut, 
+  Menu 
 } from 'lucide-react';
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
-  const toggleSidebar = () => setIsOpen(!isOpen);
+const Sidebar = ({ activePage, onNavigate }) => { 
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Mapeo directo de las tablas del MER a opciones de menú
   const menuItems = [
-      { title: "Dashboard", icon: <Home size={20} />, active: true },
-      { title: "Comunicados", icon: <MessageCircle size={20} />, active: false },
-      { title: "Calendario", icon: <Calendar size={20} />, active: false },
-      { title: "Licencias Médicas", icon: <Stethoscope size={20} />, active: false },
-      { title: "Documentos", icon: <FileText size={20} />, active: false },
-      { title: "Días Administrativos", icon: <Briefcase size={20} />, active: false },
-      { title: "Solicitud Vacaciones", icon: <Plane size={20} />, active: false },
-      { title: "Gestión Usuarios", icon: <UserCog size={20} />, active: false },
-    ];
+    { title: "Dashboard", icon: <LayoutDashboard size={20} />, active: true },
+    { title: "Ventas", icon: <ShoppingCart size={20} />, active: false },        // Tabla: Venta
+    { title: "Inventario", icon: <Package size={20} />, active: false },         // Tabla: Producto/Inventario
+    { title: "Compras", icon: <ShoppingBag size={20} />, active: false },        // Tabla: Compra
+    { title: "Pedidos", icon: <ClipboardList size={20} />, active: false },      // Tabla: Pedido
+    { title: "Proveedores", icon: <Truck size={20} />, active: false },          // Tabla: Proveedor
+    { title: "Usuarios", icon: <Users size={20} />, active: false },             // Tabla: Usuario
+  ];
 
   return (
-<div className={`sidebar ${isOpen ? 'expanded' : 'collapsed'}`}>
-      {/* --- Header / Toggle --- */}
+    <aside className={`sidebar-container ${isCollapsed ? 'collapsed' : ''}`}>
+      
+      {/* HEADER */}
       <div className="sidebar-header">
-        
-        {/* NUEVO CONTENEDOR PARA MARCA (Logo + Texto) */}
-        <div className="brand-container">
-          {isOpen && (
-            <img 
-              src={logoImg} 
-              alt="Logo Cesfam" 
-              className="sidebar-logo" 
-            />
-          )}
-          {isOpen && <h1 className="logo-text">Cesfam STA. Rosa</h1>}
+        <div className={`brand-wrapper ${isCollapsed ? 'hidden' : ''}`}>
+            <img src={logo} alt="TemucoSoft" className="brand-logo" />
+            <span className="brand-name">TemucoSoft</span>
         </div>
-        
-        {/* Botón de menú (se mantiene a la derecha) */}
-        <button className="menu-btn" onClick={toggleSidebar}>
-          <Menu size={24} />
+        <button className="toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
+            <Menu size={24} color="#0e3c66"/>
         </button>
       </div>
 
-      {/* --- NEW USER PROFILE SECTION (Top) --- */}
-      <div className="user-profile-top">
-        <img 
-          src="https://randomuser.me/api/portraits/women/44.jpg" 
-          alt="Profile" 
-          className="profile-img" 
-        />
-        {isOpen && (
-          <div className="profile-details">
-            <span className="username">Jazmin Gonzales</span>
-            <span className="user-email">jazmin.gonzales@email.com</span>
-          </div>
-        )}
-        
-      </div>
-
-      {/* --- Navigation --- */}
-      <div className="nav-section">
-        {isOpen && <p className="section-label">Navegación</p>}
-        <ul className="nav-list">
+      {/* NAVEGACIÓN */}
+      <nav className="sidebar-nav">
+        <ul>
           {menuItems.map((item, index) => (
-            <li key={index} className={`nav-item ${item.active ? 'active' : ''}`}>
-              <a href="#" className="nav-link">
-                <span className="icon-wrapper">{item.icon}</span>
-                {isOpen && <span className="link-text">{item.title}</span>}
+            // 2. Usamos activePage para saber cuál pintar de azul
+            <li key={index} className={`nav-item ${activePage === item.title ? 'active' : ''}`}>
+              
+              {/* 3. Agregamos el onClick para cambiar la página */}
+              <a 
+                href="#" 
+                className="nav-link" 
+                onClick={(e) => {
+                   e.preventDefault(); // Evita que recargue la página
+                   onNavigate(item.title); // Cambia el estado en App.jsx
+                }}
+                title={isCollapsed ? item.title : ''}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                {!isCollapsed && <span className="nav-text">{item.title}</span>}
               </a>
             </li>
           ))}
         </ul>
-      </div>
+      </nav>
 
-      {/* (La sección de perfil de abajo ha sido eliminada) */}
-    </div>
+      {/* FOOTER (Configuración y Salida) */}
+      <div className="sidebar-footer">
+        {/* Tabla: Empresa / Sucursal */}
+        <a href="#" className="nav-link footer-link" title="Configuración">
+            <span className="nav-icon"><Settings size={20} /></span>
+            {!isCollapsed && <span className="nav-text">Configuración</span>}
+        </a>
+        <a href="#" className="nav-link footer-link logout" title="Cerrar Sesión">
+            <span className="nav-icon"><LogOut size={20} /></span>
+            {!isCollapsed && <span className="nav-text">Salir</span>}
+        </a>
+      </div>
+    </aside>
   );
 };
 

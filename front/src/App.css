@@ -1,36 +1,45 @@
-/* --- App.css --- */
+/* App.css */
 
-/* 1. Reset básico para asegurar pantalla completa sin bordes extraños */
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #0f172a; /* Color de fondo oscuro (coincide con el sidebar) */
-  overflow: hidden; /* Evita doble barra de scroll */
-  font-family: 'Inter', sans-serif;
+/* --- RESETEO DE MODO OSCURO (AGREGA ESTO AL PRINCIPIO) --- */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  
+  /* Forzamos colores oscuros para el texto base */
+  color: #1e293b; 
+  background-color: #f8fafc;
+
+  /* IMPORTANTE: Esto evita que el navegador fuerce iconos blancos */
+  color-scheme: light; 
 }
 
-/* 2. Contenedor Principal (Layout) */
+/* Reseteo específico para botones para quitar estilos de Vite */
+button {
+  background-color: transparent;
+  color: inherit;
+  border: none;
+}
+
+/* ... Aquí sigue el resto de tu CSS de App.css que ya tenías ... */
+
 .app-container {
-  display: flex;          /* Pone Sidebar y Dashboard lado a lado */
-  width: 100vw;           /* Fuerza el ancho al 100% de la ventana */
-  height: 100vh;          /* Fuerza el alto al 100% de la ventana */
-  background-color: #0f172a; /* Fondo base oscuro */
-  box-sizing: border-box;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: #f8fafc;
+  overflow: hidden;
 }
 
-/* 3. Envoltorio del Dashboard */
 .content-wrapper {
-  flex: 1;                /* MAGIA: Ocupa todo el espacio restante a la derecha */
-  display: flex;          /* Para asegurar que el Dashboard interno se estire */
+  flex: 1;
+  display: flex;
   flex-direction: column;
-  
-  /* Márgenes para crear el efecto "flotante" */
-  margin: 20px 20px 20px 0; /* Arriba, Derecha, Abajo, Izquierda (0 porque el sidebar ya tiene margen) */
-  
-  border-radius: 20px;    /* Bordes redondeados */
-  overflow: hidden;       /* Recorta el contenido para respetar los bordes redondeados */
-  background-color: #f1f5f9; /* Fondo claro base para el área de contenido */
+  height: 100%;
+  overflow: hidden;
   position: relative;
+}
+
+.main-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
