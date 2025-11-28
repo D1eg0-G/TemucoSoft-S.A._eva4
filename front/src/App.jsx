@@ -6,6 +6,8 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from './Dashboard';
 import SalesPOS from './SalesPOS';
+import ProductList from './ProductList';
+import Orders from './Orders';
 
 // Importa tus otros módulos aquí cuando los adaptes:
 // import Documents from './Documents';
@@ -34,6 +36,8 @@ function App() {
             {/* LÓGICA DE RENDERIZADO CONDICIONAL */}
             {currentPage === 'Dashboard' && <Dashboard />}
             {currentPage === 'Ventas' && <SalesPOS />}
+            {currentPage === 'Inventario' && <ProductList />}
+            {currentPage === 'Pedidos' && <Orders />}
             
             {/* Agrega aquí los otros casos cuando tengas los archivos listos: */}
             {/* {currentPage === 'Inventario' && <Inventory />} */}

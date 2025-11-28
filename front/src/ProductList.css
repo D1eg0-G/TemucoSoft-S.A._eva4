@@ -1,0 +1,306 @@
+/* ProductList.css */
+
+:root {
+  --ts-blue: #0e3c66;
+  --ts-orange: #f97316;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+  --bg-hover: #f8fafc;
+  --border-light: #e2e8f0;
+}
+
+.product-list-container {
+  padding: 30px;
+  background-color: #f8fafc;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  overflow-y: auto;
+}
+
+/* --- HEADER --- */
+.pl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.pl-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.showing-label {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.showing-label span {
+  font-weight: 700;
+  color: var(--text-main);
+  background: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.btn-tool {
+  background: white;
+  border: 1px solid var(--border-light);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-tool:hover {
+  background: var(--bg-hover);
+  border-color: #cbd5e1;
+}
+
+.btn-primary-add {
+  background: var(--ts-blue);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(14, 60, 102, 0.2);
+}
+.btn-primary-add:hover {
+  background: #0b2e4f;
+}
+
+/* --- TABLA --- */
+.table-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border-light);
+  overflow: hidden; /* Para las esquinas redondeadas */
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.custom-table th {
+  text-align: left;
+  padding: 18px 24px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-light);
+  background-color: #ffffff;
+}
+
+.custom-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.custom-table tr:hover {
+  background-color: #fcfcfc;
+}
+.custom-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Columnas Específicas */
+.col-product {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.prod-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-light);
+}
+.prod-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.col-sku {
+  color: var(--text-soft);
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+.col-price {
+  font-weight: 600;
+}
+.col-stock .unit {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  font-weight: 400;
+}
+.col-cat {
+  color: var(--text-soft);
+}
+
+/* Badges de Estado */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
+}
+.badge-green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-orange {
+  background: #ffedd5;
+  color: #c2410c;
+} /* Bajo stock */
+.badge-red {
+  background: #fee2e2;
+  color: #ef4444;
+} /* Sin stock */
+.badge-blue {
+  background: #e0f2fe;
+  color: #0369a1;
+} /* Oferta */
+.badge-gray {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Acciones */
+.col-actions {
+  text-align: right;
+}
+.btn-icon-action {
+  background-color: #ffffff !important; /* Fuerza fondo blanco */
+  border: 1px solid #e2e8f0;
+  width: 32px; 
+  height: 32px; 
+  border-radius: 6px;
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.2s;
+  
+  /* FUERZA EL COLOR GRIS PARA EL ICONO */
+  color: #000000 !important;
+}
+
+/* REGLA DE ORO: Obliga al SVG a pintarse */
+.btn-icon-action svg {
+  stroke: #64748b !important;
+}
+
+/* Hover Editar (Azul) */
+.btn-icon-action:hover {
+  border-color: #0e3c66 !important;
+  color: #0e3c66 !important;
+}
+.btn-icon-action:hover svg {
+  stroke: #0e3c66 !important;
+}
+
+/* Hover Borrar (Rojo) */
+.btn-icon-action.delete:hover {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+.btn-icon-action.delete:hover svg {
+  stroke: #ef4444 !important;
+}
+
+/* --- FOOTER PAGINACION --- */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-light);
+}
+.footer-info {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.page-nav {
+  background: white;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.page-nav:hover {
+  color: var(--ts-blue);
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+.p-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.p-num:hover {
+  background: #f1f5f9;
+}
+.p-num.active {
+  background: var(--ts-blue);
+  color: white;
+  border-color: var(--ts-blue);
+}
