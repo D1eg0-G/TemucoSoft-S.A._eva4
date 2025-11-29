@@ -1,0 +1,340 @@
+/* Users.css */
+
+:root {
+  --ts-blue: #0e3c66;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+  --bg-hover: #f8fafc;
+  --border-light: #e2e8f0;
+}
+
+.users-container {
+  padding: 30px;
+  background-color: #f8fafc;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  overflow-y: auto;
+}
+
+/* --- HEADER & FILTERS (Sin cambios mayores) --- */
+.users-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.page-title {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.top-tabs {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 8px;
+  padding: 4px;
+}
+.top-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.top-tab-btn.active {
+  background: white;
+  color: var(--text-main);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.btn-add-user {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid #2563eb;
+}
+.btn-add-user:hover {
+  background-color: #2563eb;
+}
+
+.role-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 0;
+  padding-bottom: 10px;
+}
+.role-list {
+  display: flex;
+  gap: 20px;
+}
+.role-filter-btn {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding-bottom: 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.role-filter-btn.active {
+  color: var(--ts-blue);
+}
+.role-filter-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -11px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--ts-blue);
+  border-radius: 3px 3px 0 0;
+}
+.count-badge {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+.view-all-link {
+  font-size: 0.85rem;
+  color: #3b82f6;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- TABLE CARD (GRID REAJUSTADO) --- */
+.users-table-card {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-light);
+  border-top: none;
+}
+
+.u-table-header,
+.u-table-row {
+  display: grid;
+  /* NUEVO GRID sin checkbox: Name | Role | Email | Branch | Status | Menu */
+  grid-template-columns: 3fr 1.5fr 2.5fr 1.5fr 100px 50px;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.u-table-header {
+  background-color: #f9fafb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.u-table-row:hover {
+  background-color: #f8fafc;
+}
+.inactive-row {
+  opacity: 0.7;
+  background-color: #f9fafb;
+}
+
+/* User Cell con Icono Genérico */
+.user-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* NUEVO ESTILO para el icono de usuario */
+.u-avatar-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #e0f2fe; /* Azul muy claro */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #bae6fd;
+}
+
+.u-fullname {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+.role-text-badge {
+  background: #f1f5f9;
+  color: var(--text-soft);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--border-light);
+}
+.col-email,
+.col-branch {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+/* Switch (Sin cambios) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+}
+input:checked + .slider {
+  background-color: #3b82f6;
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+.slider.round {
+  border-radius: 34px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* --- ACTIONS MENU --- */
+.relative-container {
+  position: relative;
+} /* Necesario para el dropdown absoluto */
+
+.btn-dots {
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.btn-dots:hover {
+  color: var(--text-main);
+  background-color: #e2e8f0;
+}
+
+/* NUEVOS ESTILOS DROPDOWN */
+.action-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0; /* Aparece debajo y a la derecha */
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  width: 120px;
+  padding: 5px;
+  margin-top: 5px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+}
+.dropdown-item:hover {
+  background-color: #f1f5f9;
+}
+.dropdown-item.delete {
+  color: #ef4444;
+}
+.dropdown-item.delete:hover {
+  background-color: #fee2e2;
+}
+
+/* Footer (Sin cambios) */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+}
+.footer-info {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+.pagination-controls {
+  display: flex;
+  gap: 5px;
+}
+.page-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-light);
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-soft);
+}
+.page-btn.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}

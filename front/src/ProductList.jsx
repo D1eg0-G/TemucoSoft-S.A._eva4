@@ -94,7 +94,6 @@ const ProductList = () => {
       
       {/* 1. HEADER & TOOLBAR */}
       <div className="pl-header">
-        <h2 className="page-title">Inventario de Productos</h2>
         
         <div className="pl-tools">
           <div className="showing-label">

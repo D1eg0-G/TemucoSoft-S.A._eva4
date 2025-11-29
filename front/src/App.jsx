@@ -7,8 +7,10 @@ import Header from './Header';
 import Dashboard from './Dashboard';
 import SalesPOS from './SalesPOS';
 import ProductList from './ProductList';
-import Orders from './Orders';
-
+import Ordenes from './Orders';
+import Gestionuser from './Users';
+import Compras from './Purchases';
+import Proveedores from './Providers';
 // Importa tus otros módulos aquí cuando los adaptes:
 // import Documents from './Documents';
 // import UserManagement from './UserManagement';
@@ -37,7 +39,10 @@ function App() {
             {currentPage === 'Dashboard' && <Dashboard />}
             {currentPage === 'Ventas' && <SalesPOS />}
             {currentPage === 'Inventario' && <ProductList />}
-            {currentPage === 'Pedidos' && <Orders />}
+            {currentPage === 'Pedidos' && <Ordenes />}
+            {currentPage === 'Usuarios' && <Gestionuser />}
+            {currentPage === 'Compras' && <Compras />}
+            {currentPage === 'Proveedores' && <Proveedores />}
             
             {/* Agrega aquí los otros casos cuando tengas los archivos listos: */}
             {/* {currentPage === 'Inventario' && <Inventory />} */}
