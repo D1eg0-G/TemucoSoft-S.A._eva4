@@ -1,0 +1,358 @@
+/* Subscription.css */
+
+:root {
+  --ts-blue: #0e3c66;
+  --ts-orange: #f97316;
+  --bg-hover: #f8fafc;
+  --border-light: #e2e8f0;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+  --card-bg: #ffffff;
+}
+
+.subscription-container {
+  padding: 30px;
+  background-color: #f8fafc;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  overflow-y: auto;
+}
+
+/* HEADER */
+.sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.page-title {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.status-pill-large {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* GRID LAYOUT */
+.sub-grid-layout {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr;
+  gap: 25px; /* Izquierda más ancha */
+}
+
+/* --- CARDS GENERALES --- */
+.plan-card-main,
+.usage-card,
+.payment-method-card,
+.invoices-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 25px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 25px;
+}
+
+/* PLAN CARD (Highlight) */
+.plan-card-main {
+  border-top: 4px solid var(--ts-blue); /* Borde superior azul corporativo */
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.plan-label {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.plan-name {
+  font-size: 1.8rem;
+  color: var(--text-main);
+  margin: 5px 0 0 0;
+}
+
+.plan-price-box {
+  text-align: right;
+}
+.plan-price-box .price {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--ts-blue);
+}
+.plan-price-box .period {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.plan-dates {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.date-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.plan-features-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+.feat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+.feat-check {
+  color: #16a34a;
+}
+
+.plan-actions {
+  display: flex;
+  gap: 15px;
+}
+.btn-upgrade {
+  flex: 1;
+  background: var(--ts-orange);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-upgrade:hover {
+  background: #ea580c;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid var(--border-light);
+  color: #ef4444;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-cancel:hover {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+/* USAGE CARD */
+.usage-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.usage-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+.usage-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+.usage-vals {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.progress-bg {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--ts-blue);
+  border-radius: 4px;
+}
+.progress-bar.high {
+  background: #ef4444;
+}
+
+/* PAYMENT METHOD */
+.payment-method-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+}
+.card-display {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid var(--border-light);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+.card-icon-box {
+  width: 45px;
+  height: 45px;
+  background: #e0f2fe;
+  color: var(--ts-blue);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.card-details strong {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+.card-details span {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+.card-details small {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin-top: 2px;
+}
+
+.btn-edit-card {
+  background: none;
+  border: none;
+  color: var(--ts-blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+.billing-email {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+.billing-email strong {
+  color: var(--text-main);
+  margin-left: 5px;
+}
+
+/* INVOICES */
+.invoices-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.invoices-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--ts-blue);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.invoices-list {
+  display: flex;
+  flex-direction: column;
+}
+.invoice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.invoice-row:last-child {
+  border-bottom: none;
+}
+
+.inv-left {
+  display: flex;
+  flex-direction: column;
+}
+.inv-date {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+.inv-id {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  font-family: monospace;
+}
+
+.inv-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.inv-amount {
+  font-weight: 700;
+  color: var(--text-main);
+}
+.btn-download-inv {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-soft);
+}
+.btn-download-inv:hover {
+  border-color: var(--ts-blue);
+  color: var(--ts-blue);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sub-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}

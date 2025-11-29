@@ -53,24 +53,122 @@
   min-height: 40px;
 }
 
-.brand-wrapper { display: flex; align-items: center; gap: 10px; }
-.brand-logo { width: 30px; height: auto; }
-.brand-name { font-weight: 700; color: var(--ts-blue); font-size: 1.1rem; white-space: nowrap;}
-
-.toggle-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;}
-
-.sidebar-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-
-.nav-link {
-  display: flex; align-items: center; text-decoration: none;
-  color: var(--ts-gray); padding: 12px 16px; border-radius: 8px;
-  transition: all 0.2s ease; font-weight: 500; white-space: nowrap;
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-logo {
+  width: 30px;
+  height: auto;
+}
+.brand-name {
+  font-weight: 700;
+  color: var(--ts-blue);
+  font-size: 1.1rem;
+  white-space: nowrap;
 }
 
-.nav-icon { display: flex; align-items: center; margin-right: 12px; }
+.toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.nav-item.active .nav-link { background-color: var(--ts-blue); color: white; box-shadow: 0 4px 12px rgba(14, 60, 102, 0.3); }
-.nav-item:not(.active) .nav-link:hover, .footer-link:hover { background-color: #f1f5f9; color: var(--ts-blue); }
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-.sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 5px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
-.logout { color: var(--ts-blue); font-weight: 600; margin-top: 10px; }
+.nav-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--ts-gray);
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.nav-item.active .nav-link {
+  background-color: var(--ts-blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(14, 60, 102, 0.3);
+}
+.nav-item:not(.active) .nav-link:hover,
+.footer-link:hover {
+  background-color: #f1f5f9;
+  color: var(--ts-blue);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+.logout {
+  color: var(--ts-blue);
+  font-weight: 600;
+  margin-top: 10px;
+}
+/* --- AGREGAR AL FINAL DE Sidebar.css --- */
+
+/* Contenedor para agrupar Configuración y su submenú */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* El contenedor del submenú */
+.settings-submenu {
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  /* Animación suave */
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilo específico para el link del submenú */
+.submenu-link {
+  padding-left: 20px !important; /* Indentación para que se vea como hijo */
+  font-size: 0.9rem; /* Un poco más pequeño */
+  color: #64748b; /* Gris suave */
+}
+
+.submenu-link:hover {
+  background-color: #f1f5f9;
+  color: #0e3c66; /* Azul TemucoSoft */
+}
+
+/* Ajuste para que los iconos del footer se alineen bien */
+.footer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Para separar texto de la flecha */
+}

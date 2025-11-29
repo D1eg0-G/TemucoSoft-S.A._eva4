@@ -6,11 +6,15 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from './Dashboard';
 import SalesPOS from './SalesPOS';
-import ProductList from './ProductList';
 import Ordenes from './Orders';
 import Gestionuser from './Users';
 import Compras from './Purchases';
 import Proveedores from './Providers';
+import Scucursal from './Branches';
+import Inventory from './Inventory';
+import Products from './Products';
+import Reports from './Reports';
+import Suscripcion from './Subscription';
 // Importa tus otros módulos aquí cuando los adaptes:
 // import Documents from './Documents';
 // import UserManagement from './UserManagement';
@@ -38,11 +42,18 @@ function App() {
             {/* LÓGICA DE RENDERIZADO CONDICIONAL */}
             {currentPage === 'Dashboard' && <Dashboard />}
             {currentPage === 'Ventas' && <SalesPOS />}
-            {currentPage === 'Inventario' && <ProductList />}
+            {currentPage === 'Inventario' && <Inventory />}
             {currentPage === 'Pedidos' && <Ordenes />}
             {currentPage === 'Usuarios' && <Gestionuser />}
             {currentPage === 'Compras' && <Compras />}
             {currentPage === 'Proveedores' && <Proveedores />}
+            {currentPage === 'Sucursales' && <Scucursal />}
+            {currentPage === 'Productos' && <Products />}
+            {currentPage === 'Reportes' && <Reports />}
+            {currentPage === 'Mi Suscripción' && <Suscripcion />}
+            
+
+
             
             {/* Agrega aquí los otros casos cuando tengas los archivos listos: */}
             {/* {currentPage === 'Inventario' && <Inventory />} */}

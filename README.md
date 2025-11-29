@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧩 Sistema de Comunicación para Consultorio  
+# 🧩 Sistema de 
 *Proyecto Fullstack con React, Django y PostgreSQL*
 
 ![Status](https://img.shields.io/badge/Estado-En%20Desarrollo-blue)
@@ -15,7 +15,7 @@
 
 ## 🚀 Descripción del Proyecto
 
-Sistema orientado a mejorar la comunicación interna entre funcionarios de un consultorio, optimizando el flujo de información y facilitando la gestión de tareas y mensajes.
+Sistema para empresa que presta servicios de arridendo de un Software ERP bajo diferentes niveles de suscripcion completo con modalidad
 
 ---
 
@@ -27,7 +27,7 @@ Sistema orientado a mejorar la comunicación interna entre funcionarios de un co
 
 **Librerías Adicionales**
 - 🎨 `lucide-react` (iconos modernos)
-
+- 📊 `recharts` (graficas)
 ---
 
 ## ⚙️ Backend

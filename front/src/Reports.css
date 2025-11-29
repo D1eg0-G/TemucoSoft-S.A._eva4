@@ -1,0 +1,260 @@
+/* Reports.css */
+
+:root {
+  --ts-blue: #0e3c66;
+  --ts-orange: #f97316;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+  --bg-hover: #f8fafc;
+  --border-light: #e2e8f0;
+}
+
+.reports-container {
+  padding: 30px;
+  background-color: #f8fafc;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  overflow-y: auto;
+}
+
+/* HEADER */
+.rep-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-primary-rep {
+  background: var(--ts-blue);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.btn-secondary-rep {
+  background: white;
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* TABS */
+.rep-tabs {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid var(--border-light);
+}
+.rep-tab {
+  background: transparent;
+  border: none;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.rep-tab.active {
+  color: var(--ts-blue);
+  border-bottom-color: var(--ts-blue);
+}
+.rep-tab:hover {
+  color: var(--ts-blue);
+}
+
+/* GRID LAYOUT */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.full-width {
+  grid-column: span 2;
+}
+.half-width {
+  grid-column: span 1;
+}
+
+/* CARDS */
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.chart-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.chart-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.chart-badge.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* LISTAS DE RANKING */
+.ranking-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border-light);
+}
+.ranking-item:last-child {
+  border-bottom: none;
+}
+.rank-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  width: 40px;
+}
+.rank-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.rank-info strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+.rank-info small {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+.rank-total {
+  font-weight: 700;
+  color: var(--ts-blue);
+}
+
+/* RESUMEN CUADRICULA */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.summary-box {
+  background: var(--bg-hover);
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.summary-box small {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-bottom: 5px;
+}
+.summary-box strong {
+  font-size: 1.4rem;
+  color: var(--text-main);
+}
+.text-red {
+  color: #ef4444 !important;
+}
+
+/* TABLAS REPORTE */
+.rep-table,
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rep-table th,
+.mini-table th {
+  text-align: left;
+  padding: 12px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.rep-table td,
+.mini-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.rank-badge {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: white;
+}
+.rank-1 {
+  background: #f59e0b;
+} /* Oro */
+.rank-2 {
+  background: #94a3b8;
+} /* Plata */
+.rank-3 {
+  background: #b45309;
+} /* Bronce */
+
+.progress-bar {
+  width: 100px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--ts-blue);
+  border-radius: 3px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+  .half-width {
+    grid-column: span 2;
+  }
+}
