@@ -1,47 +1,45 @@
 import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Sidebar.css";
-import logo from "/Logo_v.png";
 import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  ShoppingBag,
-  Truck,
-  ClipboardList,
-  Users,
+  Menu,
   Settings,
   LogOut,
-  Menu,
   CreditCard,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
 
-const Sidebar = ({ activePage, onNavigate }) => {
+// Agregamos la prop 'userRole' (por defecto 'vendedor' para probar seguridad)
+const Sidebar = ({ menuItems, basePath = "/cliente", userRole = "admin" }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // 1. ESTADO NUEVO: Para abrir/cerrar el menú de configuración
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const menuItems = [
-    { title: "Dashboard", icon: <LayoutDashboard size={20} /> },
-    { title: "Ventas", icon: <ShoppingCart size={20} /> },
-    { title: "Productos", icon: <Package size={20} /> },
-    { title: "Inventario", icon: <Package size={20} /> },
-    { title: "Sucursales", icon: <Truck size={20} /> },
-    { title: "Compras", icon: <ShoppingBag size={20} /> },
-    { title: "Pedidos", icon: <ClipboardList size={20} /> },
-    { title: "Proveedores", icon: <Truck size={20} /> },
-    { title: "Usuarios", icon: <Users size={20} /> },
-    // NOTA: "Mi Suscripción" ya no está aquí, se movió abajo
-  ];
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path) => {
+    navigate(`${basePath}/${path}`);
+  };
+
+  const isActive = (path) => {
+    return location.pathname.includes(`${basePath}/${path}`);
+  };
+
+// --- LÓGICA DE FILTRADO SEGURA ---
+  const filteredMenuItems = menuItems.filter(item => {
+    // Si el item no tiene 'allowedRoles' definido, asumimos que es público o lo mostramos por seguridad para no romper la app
+    if (!item.allowedRoles) return true;
+    
+    // Si tiene roles, verificamos si el usuario cumple
+    return item.allowedRoles.includes(userRole);
+  });
 
   return (
     <aside className={`sidebar-container ${isCollapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
         <div className={`brand-wrapper ${isCollapsed ? "hidden" : ""}`}>
-          <img src={logo} alt="TemucoSoft" className="brand-logo" />
-          <span className="brand-name">TemucoSoft</span>
+          <span className="brand-name">Admin Cliente</span>
         </div>
         <button
           className="toggle-btn"
@@ -53,19 +51,18 @@ const Sidebar = ({ activePage, onNavigate }) => {
 
       <nav className="sidebar-nav">
         <ul>
-          {menuItems.map((item, index) => (
+          {/* Usamos la lista FILTRADA */}
+          {filteredMenuItems.map((item, index) => (
             <li
               key={index}
-              className={`nav-item ${
-                activePage === item.title ? "active" : ""
-              }`}
+              className={`nav-item ${isActive(item.path) ? "active" : ""}`}
             >
               <a
                 href="#"
                 className="nav-link"
                 onClick={(e) => {
                   e.preventDefault();
-                  onNavigate(item.title);
+                  handleNavigation(item.path);
                 }}
                 title={isCollapsed ? item.title : ""}
               >
@@ -78,62 +75,56 @@ const Sidebar = ({ activePage, onNavigate }) => {
       </nav>
 
       <div className="sidebar-footer">
-        {/* --- AQUÍ ESTÁ LA NUEVA FUNCIONALIDAD --- */}
-        <div className="settings-group">
-          <a
-            href="#"
-            className={`nav-link footer-link ${
-              activePage === "Configuración" ? "active" : ""
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              // Si está colapsado el sidebar, navega. Si no, abre el acordeón.
-              if (isCollapsed) {
+        {/* LÓGICA PARA CONFIGURACIÓN / SUSCRIPCIÓN */}
+        {/* Solo el ADMIN debería ver temas de facturación/suscripción */}
+        {userRole === "admin" && (
+          <div className="settings-group">
+            <a
+              href="#"
+              className={`nav-link footer-link`}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!isCollapsed) setIsSettingsOpen(!isSettingsOpen);
+              }}
+            >
+              <span className="nav-icon">
+                <Settings size={20} />
+              </span>
+              {!isCollapsed && (
+                <>
+                  <span className="nav-text" style={{ flex: 1 }}>
+                    Mi cuenta
+                  </span>
+                  {isSettingsOpen ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </>
+              )}
+            </a>
 
-              } else {
-                setIsSettingsOpen(!isSettingsOpen);
-              }
-            }}
-          >
-            <span className="nav-icon">
-              <Settings size={20} />
-            </span>
-            {!isCollapsed && (
-              <>
-                <span className="nav-text" style={{ flex: 1 }}>
-                  Mi cuenta
-                </span>
-                {isSettingsOpen ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
-              </>
+            {!isCollapsed && isSettingsOpen && (
+              <div className="settings-submenu">
+                <a
+                  href="#"
+                  className={`nav-link submenu-link ${
+                    isActive("Subcription") ? "active" : ""
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("Subcription");
+                  }}
+                >
+                  <span className="nav-icon">
+                    <CreditCard size={18} />
+                  </span>
+                  <span className="nav-text">Mi Suscripción</span>
+                </a>
+              </div>
             )}
-          </a>
-
-          {/* SUBMENÚ (Solo visible si no está colapsado y el estado es true) */}
-          {!isCollapsed && isSettingsOpen && (
-            <div className="settings-submenu">
-              <a
-                href="#"
-                className={`nav-link submenu-link ${
-                  activePage === "Mi Suscripción" ? "active" : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate("Mi Suscripción");
-                }}
-              >
-                <span className="nav-icon">
-                  <CreditCard size={18} />
-                </span>
-                <span className="nav-text">Mi Suscripción</span>
-              </a>
-            </div>
-          )}
-        </div>
-        {/* ---------------------------------------- */}
+          </div>
+        )}
 
         <a href="#" className="nav-link footer-link logout">
           <span className="nav-icon">
