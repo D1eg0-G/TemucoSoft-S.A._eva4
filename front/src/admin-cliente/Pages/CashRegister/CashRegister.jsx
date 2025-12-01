@@ -74,10 +74,7 @@ const CashRegister = () => {
       {/* 1. HEADER */}
       <div className="cash-header">
         <div>
-          <h2 className="page-title">Gestión de Caja</h2>
-          <p className="page-subtitle">
-            Control de turnos, aperturas y cierres
-          </p>
+          <h2 className="page-title">Control de turnos, aperturas y cierres</h2>
         </div>
         <div className="header-status">
           {isRegisterOpen ? (

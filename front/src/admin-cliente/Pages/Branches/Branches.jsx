@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Branches.css";
+import "/src//App.css";
 import {
   Search,
   Plus,
@@ -11,11 +12,13 @@ import {
   Users,
   TrendingUp,
   Edit,
-  Trash2,
+  X,
+  Save,
 } from "lucide-react";
 
 const Branches = () => {
-  // Datos simulados (Acordes a tabla 'sucursal' y relaciones)
+  const [showModal, setShowModal] = useState(false);
+
   const branches = [
     {
       id: "SUC-001",
@@ -37,52 +40,35 @@ const Branches = () => {
       status: true,
       stats: { users: 5, sales: "$8.2M" },
     },
-    {
-      id: "SUC-003",
-      name: "Bodega Norte",
-      code: "NORTE",
-      address: "Rudelindo Ortega 0500",
-      phone: "+56 45 211 2233",
-      email: "bodega@temucosoft.cl",
-      status: true,
-      stats: { users: 3, sales: "$0" }, // Bodega solo inventario
-    },
-    {
-      id: "SUC-004",
-      name: "Sucursal Padre Las Casas",
-      code: "PLC",
-      address: "Villa Alegre 120",
-      phone: "+56 45 299 0011",
-      email: "plc@temucosoft.cl",
-      status: false, // Inactiva / En remodelación
-      stats: { users: 0, sales: "$0" },
-    },
   ];
+
+  const handleSaveBranch = (e) => {
+    e.preventDefault();
+    alert("Sucursal creada");
+    setShowModal(false);
+  };
 
   return (
     <div className="branches-container">
-      {/* 1. HEADER */}
       <div className="branches-header">
-        <h2 className="page-title">Sucursales</h2>
+
         <div className="header-actions">
           <div className="search-box-branch">
             <Search size={18} />
             <input type="text" placeholder="Buscar sucursal..." />
           </div>
-          <button className="btn-add-branch">
+          <button className="btn-add-branch" onClick={() => setShowModal(true)}>
             <Plus size={18} /> Nueva Sucursal
           </button>
         </div>
       </div>
 
-      {/* 2. GRID DE SUCURSALES */}
       <div className="branches-grid">
         {branches.map((branch) => (
           <div
             key={branch.id}
             className={`branch-card ${!branch.status ? "inactive" : ""}`}
           >
-            {/* Cabecera de la Tarjeta */}
             <div className="branch-top">
               <div className="icon-wrapper">
                 <Building2 size={24} />
@@ -100,12 +86,9 @@ const Branches = () => {
                 </button>
               </div>
             </div>
-
-            {/* Información Principal */}
             <div className="branch-info">
               <h3 className="b-name">{branch.name}</h3>
               <span className="b-code">Cód: {branch.code}</span>
-
               <div className="b-details">
                 <div className="detail-row">
                   <MapPin size={14} className="icon-gray" />
@@ -121,8 +104,6 @@ const Branches = () => {
                 </div>
               </div>
             </div>
-
-            {/* Footer con Estadísticas (Relación con Usuarios y Ventas) */}
             <div className="branch-stats">
               <div className="stat-item">
                 <Users size={16} className="stat-icon-blue" />
@@ -139,8 +120,6 @@ const Branches = () => {
                 </div>
               </div>
             </div>
-
-            {/* Botones de Acción Rápida */}
             <div className="branch-actions">
               <button className="action-btn-card edit">
                 <Edit size={16} /> Editar
@@ -152,8 +131,67 @@ const Branches = () => {
           </div>
         ))}
       </div>
+
+      {/* --- MODAL SUCURSAL --- */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Añadir Sucursal</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleSaveBranch}>
+              <div className="form-group">
+                <label>Nombre de Sucursal</label>
+                <input type="text" placeholder="Ej: Sucursal Centro" required />
+              </div>
+              <div className="form-group">
+                <label>Dirección</label>
+                <input
+                  type="text"
+                  placeholder="Calle, Número, Ciudad"
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Teléfono</label>
+                  <input type="tel" placeholder="+56 9..." />
+                </div>
+                <div className="form-group">
+                  <label>Código Interno</label>
+                  <input type="text" placeholder="SUC-00X" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Encargado (Usuario)</label>
+                <select>
+                  <option>Seleccionar...</option>
+                  <option>Roberto Manríquez</option>
+                </select>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default Branches;

@@ -3,13 +3,13 @@
 /* --- RESETEO DE MODO OSCURO (AGREGA ESTO AL PRINCIPIO) --- */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  
+
   /* Forzamos colores oscuros para el texto base */
-  color: #1e293b; 
+  color: #1e293b;
   background-color: #f8fafc;
 
   /* IMPORTANTE: Esto evita que el navegador fuerce iconos blancos */
-  color-scheme: light; 
+  color-scheme: light;
 }
 
 /* Reseteo específico para botones para quitar estilos de Vite */
@@ -42,4 +42,137 @@ button {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+}
+/* --- ESTILOS GLOBALES PARA MODALES Y FORMULARIOS --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  background: white;
+  width: 500px;
+  max-width: 90%;
+  max-height: 90vh;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 15px;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+.btn-close-modal {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+}
+.btn-close-modal:hover {
+  color: #ef4444;
+}
+
+/* Formularios */
+.form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #0e3c66;
+  box-shadow: 0 0 0 3px rgba(14, 60, 102, 0.1);
+}
+
+.modal-footer {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-solid {
+  background: #0e3c66;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-solid:hover {
+  background: #0b2e4f;
 }

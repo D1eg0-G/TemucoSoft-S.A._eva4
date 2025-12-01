@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Package, ShoppingBag, 
   Truck, ClipboardList, Users, Settings, LogOut, Menu,
-  CreditCard, ChevronUp, ChevronDown, Wallet,
+  CreditCard, ChevronUp, ChevronDown, Wallet,File
 } from "lucide-react";
 
 // Definimos los roles constantes para evitar errores de escritura
@@ -65,6 +65,12 @@ export const menuCliente = [
       icon: <Truck size={20} />, 
       path: "Branches",
       allowedRoles: [ROLES.ADMIN] // Solo el dueño gestiona sucursales
+    },
+    { 
+      title: "Reportes", 
+      icon: <File size={20} />, 
+      path: "Reports",
+      allowedRoles: [ROLES.ADMIN] // Solo admin crea usuarios
     },
     { 
       title: "Usuarios", 

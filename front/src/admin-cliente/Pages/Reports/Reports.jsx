@@ -74,7 +74,6 @@ const Reports = () => {
     <div className="reports-container">
       {/* HEADER */}
       <div className="rep-header">
-        <h2 className="page-title">Reportes y Análisis</h2>
         <div className="header-actions">
           <button className="btn-secondary-rep">
             <Calendar size={18} /> Este Mes

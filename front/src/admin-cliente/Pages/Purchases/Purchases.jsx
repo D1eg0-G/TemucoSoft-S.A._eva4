@@ -1,62 +1,55 @@
 import React, { useState } from "react";
 import "./Purchases.css";
+import "/src//App.css";
 import {
   Search,
   Plus,
-  Filter,
   ChevronDown,
   ChevronUp,
-  MoreHorizontal,
   FileText,
   Truck,
   DollarSign,
   PackageCheck,
-  AlertCircle,
+  X,
+  Save,
 } from "lucide-react";
 
 const Purchases = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  // Datos simulados (Relación Compra -> Proveedor -> ItemCompra)
   const purchases = [
     {
       id: "COM-2024-88",
       date: "24 Nov 2025",
       provider: "TecnoGlobal Mayorista",
       total: "$1.540.000",
-      status: "Recibido", // Stock ya sumado
+      status: "Recibido",
       items: [
         {
           sku: "382934",
-          name: "Router WiFi 6 Dual Band",
+          name: "Router WiFi 6",
           cost: "$45.000",
           qty: 20,
           total: "$900.000",
         },
-        {
-          sku: "382955",
-          name: "Cámara IP Exterior",
-          cost: "$32.000",
-          qty: 20,
-          total: "$640.000",
-        },
       ],
-      invoice: "FAC-99012", // Nro Factura Proveedor
+      invoice: "FAC-99012",
     },
     {
       id: "COM-2024-89",
       date: "25 Nov 2025",
       provider: "Importadora del Sur",
       total: "$320.000",
-      status: "Pendiente", // Aún no llega
+      status: "Pendiente",
       items: [
         {
           sku: "HT339",
-          name: "Mouse Ergonómico Vertical",
+          name: "Mouse Ergonomico",
           cost: "$8.000",
           qty: 40,
           total: "$320.000",
@@ -64,35 +57,23 @@ const Purchases = () => {
       ],
       invoice: "PENDIENTE",
     },
-    {
-      id: "COM-2024-85",
-      date: "20 Nov 2025",
-      provider: "PC Factory Empresas",
-      total: "$850.000",
-      status: "Recibido",
-      items: [
-        {
-          sku: "N-0392",
-          name: "Monitor 24' Samsung",
-          cost: "$85.000",
-          qty: 10,
-          total: "$850.000",
-        },
-      ],
-      invoice: "FAC-3321",
-    },
   ];
 
   const getStatusClass = (status) => {
     if (status === "Pendiente") return "status-orange";
     if (status === "Recibido") return "status-green";
-    if (status === "Anulado") return "status-red";
     return "status-gray";
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    alert("Compra registrada");
+    setShowModal(false);
   };
 
   return (
     <div className="purchases-container">
-      {/* 1. KPIs DE GASTOS */}
+      {/* KPIs */}
       <div className="stats-overview-grid">
         <div className="stat-card blue">
           <div className="stat-icon">
@@ -123,7 +104,6 @@ const Purchases = () => {
         </div>
       </div>
 
-      {/* 2. TOOLBAR */}
       <div className="filters-toolbar">
         <div className="search-box-purchases">
           <Search size={18} />
@@ -135,25 +115,27 @@ const Purchases = () => {
               Estado: Todos <ChevronDown size={14} />
             </button>
           </div>
-          <button className="btn-primary-add">
+          <button
+            className="btn-primary-add"
+            onClick={() => setShowModal(true)}
+          >
             <Plus size={18} /> Registrar Compra
           </button>
         </div>
       </div>
 
-      {/* 3. TABLE HEADER */}
-      <div className="purchases-table-header">
-        <div className="col-id">ID Compra</div>
-        <div className="col-date">Fecha</div>
-        <div className="col-prov">Proveedor</div>
-        <div className="col-inv">Factura Ref.</div>
-        <div className="col-total">Monto Total</div>
-        <div className="col-status">Estado</div>
-        <div className="col-action"></div>
-      </div>
-
-      {/* 4. LISTA DE COMPRAS */}
       <div className="purchases-list-body">
+        {/* Header Tabla */}
+        <div className="purchases-table-header">
+          <div className="col-id">ID Compra</div>
+          <div className="col-date">Fecha</div>
+          <div className="col-prov">Proveedor</div>
+          <div className="col-inv">Factura Ref.</div>
+          <div className="col-total">Monto Total</div>
+          <div className="col-status">Estado</div>
+          <div className="col-action"></div>
+        </div>
+        {/* Lista */}
         {purchases.map((purchase) => (
           <div
             key={purchase.id}
@@ -161,7 +143,6 @@ const Purchases = () => {
               expandedRowId === purchase.id ? "expanded" : ""
             }`}
           >
-            {/* ROW PRINCIPAL */}
             <div
               className="purchase-main-row"
               onClick={() => toggleRow(purchase.id)}
@@ -177,7 +158,6 @@ const Purchases = () => {
               <div className="col-total">
                 <strong>{purchase.total}</strong>
               </div>
-
               <div className="col-status">
                 <span
                   className={`status-pill ${getStatusClass(purchase.status)}`}
@@ -185,7 +165,6 @@ const Purchases = () => {
                   {purchase.status}
                 </span>
               </div>
-
               <div className="col-action">
                 <button className="btn-expand">
                   {expandedRowId === purchase.id ? (
@@ -196,8 +175,6 @@ const Purchases = () => {
                 </button>
               </div>
             </div>
-
-            {/* DETALLE (Productos Comprados) */}
             {expandedRowId === purchase.id && (
               <div className="purchase-details-panel">
                 <div className="details-card">
@@ -217,14 +194,13 @@ const Purchases = () => {
                       <span className="d-total">{item.total}</span>
                     </div>
                   ))}
-
                   <div className="details-footer-actions">
                     <button className="btn-secondary-action">
                       <FileText size={16} /> Ver Factura PDF
                     </button>
                     {purchase.status === "Pendiente" && (
                       <button className="btn-action-receive">
-                        Confirmar Recepción (Stock)
+                        Confirmar Recepción
                       </button>
                     )}
                   </div>
@@ -234,8 +210,71 @@ const Purchases = () => {
           </div>
         ))}
       </div>
+
+      {/* --- MODAL REGISTRAR COMPRA --- */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Registrar Compra Proveedor</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleSave}>
+              <div className="form-group">
+                <label>Proveedor *</label>
+                <select>
+                  <option>TecnoGlobal S.A.</option>
+                  <option>Importadora del Sur</option>
+                </select>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>N° Factura / Boleta</label>
+                  <input type="text" placeholder="FAC-0001" required />
+                </div>
+                <div className="form-group">
+                  <label>Fecha Emisión</label>
+                  <input type="date" required />
+                </div>
+              </div>
+
+              <hr style={{ borderColor: "#e2e8f0", margin: "0" }} />
+              <small style={{ color: "#64748b" }}>
+                Detalle rápido (Monto global para registrar deuda)
+              </small>
+
+              <div className="form-group">
+                <label>Monto Total Neto</label>
+                <input type="number" placeholder="$ 0" required min="0" />
+              </div>
+
+              <div className="form-group">
+                <label>Archivo Adjunto (PDF/XML)</label>
+                <input type="file" />
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  <Save size={18} /> Guardar Compra
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default Purchases;

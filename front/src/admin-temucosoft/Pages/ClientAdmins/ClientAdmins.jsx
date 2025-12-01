@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import "./ClientAdmins.css";
+import "/src/App.css";
 import {
   Search,
   Plus,
-  Filter,
   ChevronDown,
   ChevronUp,
   User,
@@ -15,30 +15,27 @@ import {
   Activity,
   Power,
   Edit,
-  MoreVertical,
+  X,
+  Save,
 } from "lucide-react";
 
 const ClientAdmins = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  // Datos simulados (Tabla 'usuario' filtrada por rol 'admin_cliente' + join 'empresa')
   const admins = [
     {
       id: 101,
       name: "Pedro Machuca",
       email: "pedro@laespiga.cl",
       company: "Panadería La Espiga",
-      status: true, // Activo
+      status: true,
       lastLogin: "Hace 2 horas",
-      activity: [
-        { action: "Inicio de sesión", date: "Hoy, 09:00 AM" },
-        { action: "Creó usuario 'Cajera 2'", date: "Ayer, 15:30 PM" },
-        { action: "Descargó reporte de ventas", date: "23 Nov, 10:00 AM" },
-      ],
+      activity: [],
     },
     {
       id: 102,
@@ -47,28 +44,18 @@ const ClientAdmins = () => {
       company: "Ferretería Centro",
       status: true,
       lastLogin: "Ayer",
-      activity: [
-        { action: "Cambio de plan solicitado", date: "24 Nov, 11:00 AM" },
-        { action: "Inicio de sesión", date: "24 Nov, 08:30 AM" },
-      ],
-    },
-    {
-      id: 103,
-      name: "Juan Pérez",
-      email: "juan@elpaso.cl",
-      company: "Botillería El Paso",
-      status: false, // Inactivo/Bloqueado
-      lastLogin: "Hace 1 mes",
-      activity: [
-        { action: "Intento de login fallido", date: "Hoy, 02:00 AM" },
-        { action: "Cuenta desactivada por no pago", date: "20 Oct, 09:00 AM" },
-      ],
+      activity: [],
     },
   ];
 
+  const handleSave = (e) => {
+    e.preventDefault();
+    alert("Admin creado");
+    setShowModal(false);
+  };
+
   return (
     <div className="client-admins-container">
-      {/* HEADER */}
       <div className="ca-header">
         <div>
           <h2 className="page-title">Usuarios Admin Cliente</h2>
@@ -77,13 +64,12 @@ const ClientAdmins = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary-ca">
+          <button className="btn-primary-ca" onClick={() => setShowModal(true)}>
             <Plus size={18} /> Crear Admin
           </button>
         </div>
       </div>
 
-      {/* TOOLBAR */}
       <div className="ca-toolbar">
         <div className="search-box-ca">
           <Search size={18} />
@@ -96,13 +82,9 @@ const ClientAdmins = () => {
           <button className="filter-btn">
             Empresa: Todas <ChevronDown size={14} />
           </button>
-          <button className="filter-btn">
-            Estado: Todos <ChevronDown size={14} />
-          </button>
         </div>
       </div>
 
-      {/* LISTADO */}
       <div className="ca-list-body">
         {admins.map((admin) => (
           <div
@@ -111,7 +93,6 @@ const ClientAdmins = () => {
               expandedRowId === admin.id ? "expanded" : ""
             }`}
           >
-            {/* ROW PRINCIPAL */}
             <div className="admin-main-row" onClick={() => toggleRow(admin.id)}>
               <div className="col-avatar">
                 <div className="avatar-circle-ca">
@@ -147,12 +128,9 @@ const ClientAdmins = () => {
                 </button>
               </div>
             </div>
-
-            {/* DETALLES EXPANDIBLES (Acciones Críticas) */}
             {expandedRowId === admin.id && (
               <div className="admin-details-panel">
                 <div className="details-grid-ca">
-                  {/* Columna Izquierda: Acciones de Seguridad */}
                   <div className="security-section">
                     <h4>
                       <Shield size={16} /> Seguridad y Acceso
@@ -161,44 +139,33 @@ const ClientAdmins = () => {
                       <button className="btn-sec-action reset">
                         <Key size={16} /> Resetear Contraseña
                       </button>
-                      <button
-                        className="btn-sec-action sudo"
-                        title="Entrar como este usuario"
-                      >
+                      <button className="btn-sec-action sudo">
                         <ExternalLink size={16} /> Acceso Directo (Sudo)
                       </button>
                       <div className="divider-h"></div>
-                      <button className="btn-sec-action edit">
-                        <Edit size={16} /> Editar Datos
-                      </button>
                       <button
                         className={`btn-sec-action power ${
                           admin.status ? "text-red" : "text-green"
                         }`}
                       >
                         <Power size={16} />{" "}
-                        {admin.status ? "Desactivar Cuenta" : "Activar Cuenta"}
+                        {admin.status ? "Desactivar" : "Activar"}
                       </button>
                     </div>
                   </div>
-
-                  {/* Columna Derecha: Timeline de Actividad */}
                   <div className="activity-section">
                     <h4>
                       <Activity size={16} /> Actividad Reciente
                     </h4>
                     <div className="timeline">
-                      {admin.activity.map((act, i) => (
-                        <div key={i} className="timeline-item">
-                          <div className="timeline-dot"></div>
-                          <div className="timeline-content">
-                            <span className="t-action">{act.action}</span>
-                            <span className="t-date">{act.date}</span>
-                          </div>
+                      <div className="timeline-item">
+                        <div className="timeline-dot"></div>
+                        <div className="timeline-content">
+                          <span className="t-action">Inicio de sesión</span>
+                          <span className="t-date">Hoy, 09:00 AM</span>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                    <button className="btn-view-logs">Ver log completo</button>
                   </div>
                 </div>
               </div>
@@ -206,8 +173,63 @@ const ClientAdmins = () => {
           </div>
         ))}
       </div>
+
+      {/* --- MODAL CREAR ADMIN --- */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Crear Nuevo Admin Cliente</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleSave}>
+              <div className="form-group">
+                <label>Nombre Completo</label>
+                <input type="text" required />
+              </div>
+              <div className="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" required />
+              </div>
+              <div className="form-group">
+                <label>Asignar a Empresa</label>
+                <select required>
+                  <option value="">Seleccionar Empresa...</option>
+                  <option>Ferretería Centro</option>
+                  <option>Panadería La Espiga</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Contraseña Provisoria</label>
+                <input
+                  type="password"
+                  placeholder="******"
+                  required
+                  minLength="6"
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  <Save size={18} /> Crear Usuario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default ClientAdmins;

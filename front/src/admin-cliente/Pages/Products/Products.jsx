@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Products.css";
+import "/src//App.css";
 import {
   Search,
   Plus,
@@ -12,12 +13,16 @@ import {
   Trash2,
   TrendingUp,
   MoreHorizontal,
+  X,
+  Save,
 } from "lucide-react";
 
 const Products = () => {
-  const [activeTab, setActiveTab] = useState("Catalogo"); // Catalogo | Categorias | Rentabilidad
+  const [activeTab, setActiveTab] = useState("Catalogo");
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-  // Datos simulados (Acordes a tabla 'producto')
+  // Datos simulados
   const products = [
     {
       id: 1,
@@ -52,50 +57,45 @@ const Products = () => {
       image:
         "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=50&q=80",
     },
-    {
-      id: 4,
-      sku: "ELEC-404",
-      name: "Monitor Samsung 24'",
-      category: "Computación",
-      cost: 110000,
-      price: 150000,
-      status: false,
-      image:
-        "https://images.unsplash.com/photo-1547394765-185e1e68f34e?w=50&q=80",
-    },
   ];
 
-  // Datos de Categorías
   const categories = [
     { id: 1, name: "Computación", count: 120, status: "Activa" },
     { id: 2, name: "Mobiliario", count: 45, status: "Activa" },
     { id: 3, name: "Accesorios", count: 300, status: "Activa" },
-    { id: 4, name: "Papelería", count: 0, status: "Inactiva" },
   ];
 
-  // Calcular Margen (Precio - Costo)
   const calculateMargin = (price, cost) => {
     const margin = price - cost;
     const percent = ((margin / price) * 100).toFixed(1);
     return { value: margin, percent: percent };
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Datos guardados exitosamente");
+    setShowProductModal(false);
+    setShowCategoryModal(false);
+  };
+
   return (
     <div className="products-module-container">
-      {/* 1. HEADER */}
+      {/* HEADER */}
       <div className="prod-header">
-        <h2 className="page-title">Productos</h2>
         <div className="header-actions">
           <button className="btn-secondary-prod">
             <Download size={18} /> Exportar
           </button>
-          <button className="btn-primary-prod">
+          <button
+            className="btn-primary-prod"
+            onClick={() => setShowProductModal(true)}
+          >
             <Plus size={18} /> Nuevo Producto
           </button>
         </div>
       </div>
 
-      {/* 2. TABS DE NAVEGACIÓN */}
+      {/* TABS */}
       <div className="prod-tabs">
         <button
           className={`prod-tab ${activeTab === "Catalogo" ? "active" : ""}`}
@@ -117,9 +117,9 @@ const Products = () => {
         </button>
       </div>
 
-      {/* 3. CONTENIDO DINÁMICO */}
+      {/* CONTENIDO */}
       <div className="prod-content-card">
-        {/* --- VISTA CATÁLOGO --- */}
+        {/* TABLA CATÁLOGO */}
         {activeTab === "Catalogo" && (
           <>
             <div className="prod-toolbar">
@@ -178,28 +178,27 @@ const Products = () => {
           </>
         )}
 
-        {/* --- VISTA CATEGORÍAS --- */}
+        {/* VISTA CATEGORÍAS */}
         {activeTab === "Categorias" && (
           <div className="categories-view">
             <div className="cat-header-actions">
               <h3>Listado de Categorías</h3>
-              <button className="btn-small-add">Nueva Categoría</button>
+              <button
+                className="btn-small-add"
+                onClick={() => setShowCategoryModal(true)}
+              >
+                Nueva Categoría
+              </button>
             </div>
             <div className="categories-grid">
-              {categories.map((cat) => (
-                <div key={cat.id} className="cat-card">
+              {categories.map((c) => (
+                <div key={c.id} className="cat-card">
                   <div className="cat-info">
-                    <h4>{cat.name}</h4>
-                    <span>{cat.count} productos</span>
+                    <h4>{c.name}</h4>
+                    <span>{c.count} productos</span>
                   </div>
                   <div className="cat-status">
-                    <span
-                      className={`badge-pill ${
-                        cat.status === "Activa" ? "green" : "gray"
-                      }`}
-                    >
-                      {cat.status}
-                    </span>
+                    <span className="badge-pill green">{c.status}</span>
                     <button className="btn-dots">
                       <MoreHorizontal size={16} />
                     </button>
@@ -210,7 +209,7 @@ const Products = () => {
           </div>
         )}
 
-        {/* --- VISTA RENTABILIDAD (Precios y Costos) --- */}
+        {/* VISTA RENTABILIDAD */}
         {activeTab === "Rentabilidad" && (
           <table className="prod-table">
             <thead>
@@ -259,6 +258,118 @@ const Products = () => {
           </table>
         )}
       </div>
+
+      {/* --- MODAL NUEVO PRODUCTO --- */}
+      {showProductModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Registrar Nuevo Producto</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowProductModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="form-layout">
+              <div className="form-group">
+                <label>Nombre del Producto *</label>
+                <input type="text" placeholder="Ej: Monitor LED 24p" required />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>SKU (Código) *</label>
+                  <input type="text" placeholder="PROD-XXXX" required />
+                </div>
+                <div className="form-group">
+                  <label>Categoría</label>
+                  <select>
+                    <option>Computación</option>
+                    <option>Mobiliario</option>
+                    <option>Accesorios</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Precio Compra (Neto)</label>
+                  <input type="number" placeholder="0" min="0" />
+                </div>
+                <div className="form-group">
+                  <label>Precio Venta (IVA inc.)</label>
+                  <input type="number" placeholder="0" min="0" required />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Stock Inicial</label>
+                <input type="number" placeholder="0" min="0" />
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowProductModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  <Save size={18} /> Guardar Producto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL NUEVA CATEGORÍA --- */}
+      {showCategoryModal && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ width: "400px" }}>
+            <div className="modal-header">
+              <h3>Nueva Categoría</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowCategoryModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="form-layout">
+              <div className="form-group">
+                <label>Nombre Categoría</label>
+                <input type="text" required placeholder="Ej: Periféricos" />
+              </div>
+              <div className="form-group">
+                <label>Descripción</label>
+                <textarea
+                  rows="3"
+                  placeholder="Detalles de la categoría..."
+                ></textarea>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowCategoryModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  Crear Categoría
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

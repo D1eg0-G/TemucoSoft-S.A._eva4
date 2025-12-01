@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import "./Companies.css";
+import "/src/App.css";
 import {
   Search,
   Plus,
-  Filter,
   ChevronDown,
   ChevronUp,
   Building2,
@@ -13,20 +13,35 @@ import {
   ExternalLink,
   Power,
   Edit,
-  MoreHorizontal,
   Users,
   Layers,
   CreditCard,
+  X,
+  Save,
 } from "lucide-react";
+// Asegúrate de tener esta utilidad creada, si no, elimínala y usa validación simple
+import { validateRut, formatRut } from "../../../core/utils/rutValidation";
 
 const Companies = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Estado del formulario
+  const [formData, setFormData] = useState({
+    name: "",
+    rut: "",
+    contact: "",
+    email: "",
+    phone: "",
+    plan: "Estándar",
+  });
+  const [rutError, setRutError] = useState(false);
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  // Datos simulados (Clientes SaaS)
+  // Datos simulados
   const companies = [
     {
       id: 1,
@@ -42,7 +57,6 @@ const Companies = () => {
       limits: { users: 10, branches: 3 },
       payments: [
         { id: 101, date: "15/11/2025", amount: "$45.000", status: "Pagado" },
-        { id: 102, date: "15/10/2025", amount: "$45.000", status: "Pagado" },
       ],
     },
     {
@@ -56,52 +70,55 @@ const Companies = () => {
       status: "Activo",
       registered: "10/01/2023",
       stats: { users: 18, branches: 5, storage: "45GB" },
-      limits: { users: 999, branches: 999 }, // Ilimitado
+      limits: { users: 999, branches: 999 },
       payments: [
         { id: 205, date: "01/11/2025", amount: "$120.000", status: "Pagado" },
       ],
     },
-    {
-      id: 3,
-      name: "Botillería El Paso",
-      rut: "12.345.678-9",
-      contact: "Juan Pérez",
-      email: "juan@elpaso.cl",
-      phone: "+56 9 1122 3344",
-      plan: "Básico",
-      status: "Inactivo", // Bloqueado por no pago o baja
-      registered: "20/03/2024",
-      stats: { users: 2, branches: 1, storage: "1GB" },
-      limits: { users: 3, branches: 1 },
-      payments: [
-        { id: 301, date: "05/10/2025", amount: "$25.000", status: "Fallido" },
-      ],
-    },
   ];
 
-  // Helper para badges de plan
   const getPlanClass = (plan) => {
     if (plan === "Premium") return "badge-purple";
     if (plan === "Estándar") return "badge-blue";
     return "badge-gray";
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "rut") {
+      // Si tienes la función de formateo
+      const formatted = formatRut ? formatRut(value) : value;
+      setFormData({ ...formData, [name]: formatted });
+      if (validateRut) setRutError(!validateRut(formatted));
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (rutError) return alert("RUT Inválido");
+    alert("Empresa creada exitosamente");
+    setShowModal(false);
+  };
+
   return (
     <div className="companies-container">
-      {/* 1. HEADER & KPI RÁPIDOS */}
       <div className="comp-header">
         <div>
           <h2 className="page-title">Empresas Clientes</h2>
           <p className="page-subtitle">Gestión total de suscriptores SaaS</p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary-comp">
+          <button
+            className="btn-primary-comp"
+            onClick={() => setShowModal(true)}
+          >
             <Plus size={18} /> Nueva Empresa
           </button>
         </div>
       </div>
 
-      {/* 2. TOOLBAR (Filtros y Búsqueda) */}
       <div className="comp-toolbar">
         <div className="search-box-comp">
           <Search size={18} />
@@ -114,13 +131,9 @@ const Companies = () => {
           <button className="filter-btn">
             Plan: Todos <ChevronDown size={14} />
           </button>
-          <button className="filter-btn">
-            Estado: Todos <ChevronDown size={14} />
-          </button>
         </div>
       </div>
 
-      {/* 3. LISTADO DE EMPRESAS */}
       <div className="comp-list-body">
         {companies.map((company) => (
           <div
@@ -129,7 +142,6 @@ const Companies = () => {
               expandedRowId === company.id ? "expanded" : ""
             }`}
           >
-            {/* ROW PRINCIPAL (Resumen) */}
             <div
               className="company-main-row"
               onClick={() => toggleRow(company.id)}
@@ -170,10 +182,8 @@ const Companies = () => {
               </div>
             </div>
 
-            {/* DETALLES EXPANDIBLES (Todo lo que pide la imagen) */}
             {expandedRowId === company.id && (
               <div className="company-details-panel">
-                {/* Sección 1: Datos y Acciones Rápidas */}
                 <div className="detail-section top">
                   <div className="ds-info">
                     <div className="ds-item">
@@ -187,10 +197,7 @@ const Companies = () => {
                     </div>
                   </div>
                   <div className="ds-actions">
-                    <button
-                      className="btn-action-sudo"
-                      title="Entrar como Admin a esta empresa"
-                    >
+                    <button className="btn-action-sudo">
                       <ExternalLink size={16} /> Acceso Panel (Sudo)
                     </button>
                     <button className="btn-action-edit">
@@ -206,10 +213,7 @@ const Companies = () => {
                     </button>
                   </div>
                 </div>
-
                 <div className="detail-divider"></div>
-
-                {/* Sección 2: Uso de Recursos (Barras de Progreso) */}
                 <div className="detail-section resources">
                   <h4>Uso de Recursos</h4>
                   <div className="resources-grid">
@@ -228,10 +232,7 @@ const Companies = () => {
                         ></div>
                       </div>
                       <span className="res-val">
-                        {company.stats.users} /{" "}
-                        {company.limits.users > 100
-                          ? "∞"
-                          : company.limits.users}
+                        {company.stats.users} / {company.limits.users}
                       </span>
                     </div>
                     <div className="res-item">
@@ -251,16 +252,11 @@ const Companies = () => {
                         ></div>
                       </div>
                       <span className="res-val">
-                        {company.stats.branches} /{" "}
-                        {company.limits.branches > 100
-                          ? "∞"
-                          : company.limits.branches}
+                        {company.stats.branches} / {company.limits.branches}
                       </span>
                     </div>
                   </div>
                 </div>
-
-                {/* Sección 3: Historial de Pagos Recientes */}
                 <div className="detail-section payments">
                   <h4>
                     <CreditCard size={16} /> Últimos Pagos
@@ -279,13 +275,7 @@ const Companies = () => {
                           <td>{p.date}</td>
                           <td>{p.amount}</td>
                           <td>
-                            <span
-                              className={`pay-status ${
-                                p.status === "Pagado" ? "ok" : "fail"
-                              }`}
-                            >
-                              {p.status}
-                            </span>
+                            <span className="pay-status ok">{p.status}</span>
                           </td>
                         </tr>
                       ))}
@@ -298,18 +288,115 @@ const Companies = () => {
         ))}
       </div>
 
-      {/* Footer Paginación */}
-      <div className="comp-footer">
-        <span className="footer-info">Mostrando 3 de 142 empresas</span>
-        <div className="pagination-controls">
-          <button className="page-btn">Anterior</button>
-          <div className="page-numbers">
-            <button className="p-num active">1</button>
-            <button className="p-num">2</button>
+      {/* --- MODAL NUEVA EMPRESA --- */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Registrar Nueva Empresa Cliente</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>
+                  Razón Social / Nombre Fantasía <span className="req">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  placeholder="Ej: Panadería El Trigo"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    RUT Empresa <span className="req">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="rut"
+                    required
+                    placeholder="76.xxx.xxx-x"
+                    className={rutError ? "input-error" : ""}
+                    value={formData.rut}
+                    onChange={handleInputChange}
+                  />
+                  {rutError && (
+                    <small style={{ color: "red" }}>RUT Inválido</small>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Plan Inicial</label>
+                  <select
+                    name="plan"
+                    value={formData.plan}
+                    onChange={handleInputChange}
+                  >
+                    <option>Básico</option>
+                    <option>Estándar</option>
+                    <option>Premium</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nombre Contacto</label>
+                  <input
+                    type="text"
+                    name="contact"
+                    required
+                    value={formData.contact}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Teléfono</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="+56 9..."
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>
+                  Email Administrativo <span className="req">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  <Save size={18} /> Crear Empresa
+                </button>
+              </div>
+            </form>
           </div>
-          <button className="page-btn">Siguiente</button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

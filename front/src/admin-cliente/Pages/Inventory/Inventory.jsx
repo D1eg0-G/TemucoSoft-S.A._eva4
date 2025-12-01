@@ -1,22 +1,25 @@
 import React, { useState } from "react";
 import "./Inventory.css";
+import "/src//App.css";
 import {
   Search,
-  Filter,
   Download,
-  Plus,
-  ArrowRightLeft, // Para Traspasos
-  ClipboardList, // Para Ajustes
-  AlertTriangle, // Alertas
+  ArrowRightLeft,
+  ClipboardList,
+  AlertTriangle,
   Package,
   TrendingUp,
   History,
+  X,
+  Save,
+  ArrowRight,
 } from "lucide-react";
 
 const Inventory = () => {
-  const [activeTab, setActiveTab] = useState("Stock"); // Stock | Movimientos | Alertas
+  const [activeTab, setActiveTab] = useState("Stock");
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
-  // 1. DATOS: Stock por Sucursal (Tabla inventario + producto + sucursal)
+  // Datos Stock
   const stockData = [
     {
       id: 1,
@@ -51,20 +54,9 @@ const Inventory = () => {
       min: 10,
       status: "Crítico",
     },
-    {
-      id: 4,
-      sku: "ACC-651",
-      name: "Teclado Mecánico",
-      total: 120,
-      matrix: 60,
-      centro: 40,
-      norte: 20,
-      min: 15,
-      status: "Exceso",
-    },
   ];
 
-  // 2. DATOS: Historial de Movimientos (Tabla movimiento)
+  // Datos Movimientos
   const movementsData = [
     {
       id: 101,
@@ -84,30 +76,10 @@ const Inventory = () => {
       branch: "Matriz > Centro",
       user: "Admin",
     },
-    {
-      id: 103,
-      date: "23/11 18:00",
-      type: "Recepción",
-      product: "Teclado Mecánico",
-      qty: +50,
-      branch: "Casa Matriz",
-      user: "Bodega",
-    },
-    {
-      id: 104,
-      date: "23/11 14:20",
-      type: "Ajuste",
-      product: "Monitor Samsung",
-      qty: -1,
-      branch: "Sucursal Norte",
-      user: "Admin",
-    },
   ];
 
-  // 3. DATOS: Alertas de Reposición
   const alertsData = stockData.filter((item) => item.total <= item.min);
 
-  // Helper para color de badges
   const getTypeClass = (type) => {
     if (type === "Venta") return "badge-red";
     if (type === "Recepción") return "badge-green";
@@ -115,21 +87,28 @@ const Inventory = () => {
     return "badge-gray";
   };
 
+  const handleTransfer = (e) => {
+    e.preventDefault();
+    alert("Traspaso realizado con éxito");
+    setShowTransferModal(false);
+  };
+
   return (
     <div className="inventory-container">
-      {/* HEADER & ACCIONES GLOBALES */}
       <div className="inv-header">
         <div className="header-actions">
           <button className="btn-secondary-inv">
             <ClipboardList size={18} /> Ajuste Stock
           </button>
-          <button className="btn-primary-inv">
+          <button
+            className="btn-primary-inv"
+            onClick={() => setShowTransferModal(true)}
+          >
             <ArrowRightLeft size={18} /> Nuevo Traspaso
           </button>
         </div>
       </div>
 
-      {/* KPI CARDS (Resumen rápido) */}
       <div className="inv-stats-grid">
         <div className="inv-stat-card">
           <div className="i-icon blue">
@@ -160,7 +139,6 @@ const Inventory = () => {
         </div>
       </div>
 
-      {/* TABS DE NAVEGACIÓN */}
       <div className="inv-tabs-container">
         <button
           className={`inv-tab ${activeTab === "Stock" ? "active" : ""}`}
@@ -178,16 +156,14 @@ const Inventory = () => {
           className={`inv-tab ${activeTab === "Alertas" ? "active" : ""}`}
           onClick={() => setActiveTab("Alertas")}
         >
-          Alertas Reposición
+          Alertas{" "}
           {alertsData.length > 0 && (
             <span className="tab-badge">{alertsData.length}</span>
           )}
         </button>
       </div>
 
-      {/* CONTENIDO DINÁMICO SEGÚN TAB */}
       <div className="inv-content-card">
-        {/* --- VISTA 1: STOCK POR SUCURSAL --- */}
         {activeTab === "Stock" && (
           <>
             <div className="inv-toolbar">
@@ -235,7 +211,6 @@ const Inventory = () => {
           </>
         )}
 
-        {/* --- VISTA 2: MOVIMIENTOS --- */}
         {activeTab === "Movimientos" && (
           <table className="inv-table">
             <thead>
@@ -273,7 +248,6 @@ const Inventory = () => {
           </table>
         )}
 
-        {/* --- VISTA 3: ALERTAS --- */}
         {activeTab === "Alertas" && (
           <div className="alerts-view">
             <div className="alert-message">
@@ -312,8 +286,84 @@ const Inventory = () => {
           </div>
         )}
       </div>
+
+      {/* --- MODAL TRASPASO --- */}
+      {showTransferModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Traspaso entre Sucursales</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowTransferModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleTransfer}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Origen</label>
+                  <select defaultValue="Bodega Central">
+                    <option>Bodega Central</option>
+                    <option>Sucursal Norte</option>
+                  </select>
+                </div>
+                <div
+                  className="form-group"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    paddingTop: "20px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ArrowRight color="#64748b" />
+                </div>
+                <div className="form-group">
+                  <label>Destino</label>
+                  <select defaultValue="Sucursal Centro">
+                    <option>Sucursal Centro</option>
+                    <option>Sucursal Norte</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Producto</label>
+                <input type="text" placeholder="Buscar SKU o Nombre..." />
+              </div>
+
+              <div className="form-group">
+                <label>Cantidad a Mover</label>
+                <input type="number" min="1" placeholder="0" required />
+              </div>
+
+              <div className="form-group">
+                <label>Nota / Motivo</label>
+                <textarea
+                  rows="2"
+                  placeholder="Ej: Reposición semanal"
+                ></textarea>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowTransferModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  Confirmar Movimiento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default Inventory;

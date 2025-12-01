@@ -29,11 +29,5 @@ export const menuTemucoSoft = [
     icon: <Users size={20} />, 
     path: "client-admins",
     allowedRoles: [ROLE_SUPER] // <--- AGREGAR ESTO
-  },
-  { 
-    title: "Reportes SaaS", 
-    icon: <FileText size={20} />, 
-    path: "reports",
-    allowedRoles: [ROLE_SUPER] // <--- AGREGAR ESTO
   }
 ];
