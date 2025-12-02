@@ -6,7 +6,9 @@
 }
 
 .sidebar-container {
-  width: 260px; /* Ancho normal */
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
   height: 100vh;
   background-color: var(--bg-white);
   display: flex;
@@ -14,37 +16,33 @@
   padding: 20px;
   box-sizing: border-box;
   border-right: 1px solid #e2e8f0;
-  transition: width 0.3s ease; /* Transición suave */
-  overflow: hidden; /* Evita que el texto se rompa al cerrar */
-  flex-shrink: 0; /* Evita que el sidebar se aplaste */
+  transition: width 0.3s ease;
+  overflow-x: hidden;
+  flex-shrink: 0;
 }
 
 /* --- ESTADO CONTRAÍDO --- */
 .sidebar-container.collapsed {
-  width: 80px; /* Ancho reducido */
-  padding: 20px 10px; /* Menos padding lateral */
+  width: 80px;
+  min-width: 80px;
+  padding: 20px 10px;
 }
 
-/* Ajustes del Header cuando está cerrado */
 .sidebar-container.collapsed .sidebar-header {
-  justify-content: center; /* Centrar el botón de hamburguesa */
+  justify-content: center;
 }
-
 .brand-wrapper.hidden {
-  display: none; /* Ocultar logo y texto */
+  display: none;
 }
-
-/* Ajustes de los Links cuando está cerrado */
 .sidebar-container.collapsed .nav-link {
-  justify-content: center; /* Centrar iconos */
+  justify-content: center;
   padding: 12px;
 }
-
 .sidebar-container.collapsed .nav-icon {
-  margin-right: 0; /* Quitar margen derecho del icono */
+  margin-right: 0;
 }
 
-/* --- RESTO DE ESTILOS (Igual que antes) --- */
+/* HEADER */
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -53,20 +51,27 @@
   min-height: 40px;
 }
 
+/* --- CORRECCIÓN DE MARCA --- */
 .brand-wrapper {
   display: flex;
+  flex-direction: row; /* Alineación horizontal (Logo - Texto) */
   align-items: center;
   gap: 10px;
+  overflow: hidden;
 }
+
 .brand-logo {
-  width: 30px;
-  height: auto;
+  width: 32px !important; /* Tamaño controlado */
+  height: 32px !important;
+  object-fit: contain;
 }
+
 .brand-name {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ts-blue);
   font-size: 1.1rem;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .toggle-btn {
@@ -79,6 +84,7 @@
   justify-content: center;
 }
 
+/* NAV */
 .sidebar-nav ul {
   list-style: none;
   padding: 0;
@@ -87,7 +93,6 @@
   flex-direction: column;
   gap: 8px;
 }
-
 .nav-link {
   display: flex;
   align-items: center;
@@ -99,7 +104,6 @@
   font-weight: 500;
   white-space: nowrap;
 }
-
 .nav-icon {
   display: flex;
   align-items: center;
@@ -117,6 +121,7 @@
   color: var(--ts-blue);
 }
 
+/* FOOTER */
 .sidebar-footer {
   margin-top: auto;
   display: flex;
@@ -125,50 +130,61 @@
   padding-top: 20px;
   border-top: 1px solid #f1f5f9;
 }
-.logout {
-  color: var(--ts-blue);
-  font-weight: 600;
-  margin-top: 10px;
-}
-/* --- AGREGAR AL FINAL DE Sidebar.css --- */
 
-/* Contenedor para agrupar Configuración y su submenú */
+/* Configuración Group */
 .settings-group {
   display: flex;
   flex-direction: column;
   width: 100%;
 }
-
-/* El contenedor del submenú */
 .settings-submenu {
   display: flex;
   flex-direction: column;
   margin-top: 5px;
   margin-bottom: 5px;
-  /* Animación suave */
   animation: fadeIn 0.3s ease;
 }
-
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-/* Estilo específico para el link del submenú */
 .submenu-link {
-  padding-left: 20px !important; /* Indentación para que se vea como hijo */
-  font-size: 0.9rem; /* Un poco más pequeño */
-  color: #64748b; /* Gris suave */
+  padding-left: 20px !important;
+  font-size: 0.9rem;
+  color: #64748b;
 }
-
 .submenu-link:hover {
   background-color: #f1f5f9;
-  color: #0e3c66; /* Azul TemucoSoft */
+  color: #0e3c66;
 }
-
-/* Ajuste para que los iconos del footer se alineen bien */
+.submenu-link.active {
+  background-color: #e0f2fe;
+  color: #0e3c66;
+  font-weight: 600;
+}
 .footer-link {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Para separar texto de la flecha */
+  justify-content: space-between;
+}
+
+/* LOGOUT (ROJO) */
+.logout {
+  color: #ef4444 !important;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.logout:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+.logout .nav-icon {
+  color: inherit;
 }

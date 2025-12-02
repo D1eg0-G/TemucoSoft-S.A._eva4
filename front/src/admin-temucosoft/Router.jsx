@@ -18,7 +18,7 @@ export default function TemucoSoftRouter() {
         <Route path="client-admins" element={<ClientAdmins />} />
         
         {/* Redirección por defecto */}
-        <Route path="*" element={<Navigate to="dashboard" />} />
+        <Route path="*" element={<Navigate to="/ts/dashboard" replace />} />
       </Routes>
     </TemucoSoftLayout>
   );

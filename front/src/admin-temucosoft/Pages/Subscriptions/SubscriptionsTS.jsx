@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./SubscriptionsTS.css";
-import "/src/App.css";
 import {
   Search,
   Plus,
@@ -14,11 +13,33 @@ import {
   ArrowUpRight,
   X,
   Save,
+  XCircle,
+  FileClock,
+  Edit,
 } from "lucide-react";
 
 const SubscriptionsTS = () => {
   const [activeTab, setActiveTab] = useState("Activas");
   const [showModal, setShowModal] = useState(false);
+
+  // Estado para el menú desplegable
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef();
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleMenu = (id) => {
+    setOpenMenuId(openMenuId === id ? null : id);
+  };
 
   const subscriptions = [
     {
@@ -57,6 +78,12 @@ const SubscriptionsTS = () => {
       default:
         return "badge-gray";
     }
+  };
+
+  const handleAction = (action, id) => {
+    console.log(action, id);
+    setOpenMenuId(null);
+    // Aquí iría la lógica real
   };
 
   const handleSave = (e) => {
@@ -139,56 +166,101 @@ const SubscriptionsTS = () => {
       </div>
 
       <div className="subs-table-card">
-        <table className="subs-table">
-          <thead>
-            <tr>
-              <th>Empresa Cliente</th>
-              <th>Plan</th>
-              <th>Ciclo</th>
-              <th>Precio</th>
-              <th>Próxima Facturación</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSubs.map((sub) => (
-              <tr
-                key={sub.id}
-                className={sub.status === "Vencida" ? "row-warning" : ""}
-              >
-                <td>
-                  <div className="col-company-sub">
-                    <span className="c-name">{sub.company}</span>
-                    <span className="c-id">{sub.id}</span>
+        <div className="subs-table-header">
+          <div className="col-comp">EMPRESA CLIENTE</div>
+          <div className="col-plan">PLAN</div>
+          <div className="col-cycle">CICLO</div>
+          <div className="col-price">PRECIO</div>
+          <div className="col-next">PRÓXIMA FACTURACIÓN</div>
+          <div className="col-status">ESTADO</div>
+          <div className="col-action"></div>
+        </div>
+
+        <div className="subs-list-body" ref={menuRef}>
+          {filteredSubs.map((sub) => (
+            <div
+              key={sub.id}
+              className={`subs-row ${
+                sub.status === "Vencida" ? "row-warning" : ""
+              }`}
+            >
+              <div className="col-comp">
+                <div className="col-company-sub">
+                  <span className="c-name">{sub.company}</span>
+                  <span className="c-id">{sub.id}</span>
+                </div>
+              </div>
+              <div className="col-plan">
+                <span className="plan-pill">{sub.plan}</span>
+              </div>
+              <div className="col-cycle">{sub.cycle}</div>
+              <div className="col-price">
+                <strong>{sub.price}</strong>
+              </div>
+              <div className="col-next">
+                <div className="date-info">
+                  <Calendar size={14} /> {sub.nextBilling}
+                </div>
+              </div>
+              <div className="col-status">
+                <span
+                  className={`status-badge-sub ${getStatusClass(sub.status)}`}
+                >
+                  {sub.status}
+                </span>
+              </div>
+
+              {/* MENÚ DE ACCIONES (3 Puntos) */}
+              <div className="col-action relative-container">
+                <button className="btn-dots" onClick={() => toggleMenu(sub.id)}>
+                  <MoreVertical size={18} />
+                </button>
+
+                {openMenuId === sub.id && (
+                  <div className="action-dropdown">
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleAction("edit", sub.id)}
+                    >
+                      <Edit size={16} /> Editar
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleAction("upgrade", sub.id)}
+                    >
+                      <ArrowUpRight size={16} /> Cambiar Plan
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleAction("history", sub.id)}
+                    >
+                      <FileClock size={16} /> Ver Historial
+                    </button>
+
+                    {(sub.status === "Por Vencer" ||
+                      sub.status === "Vencida") && (
+                      <button
+                        className="dropdown-item highlight"
+                        onClick={() => handleAction("renew", sub.id)}
+                      >
+                        <RefreshCw size={16} /> Renovar
+                      </button>
+                    )}
+
+                    <div className="divider-h"></div>
+
+                    <button
+                      className="dropdown-item delete"
+                      onClick={() => handleAction("cancel", sub.id)}
+                    >
+                      <XCircle size={16} /> Cancelar
+                    </button>
                   </div>
-                </td>
-                <td>
-                  <span className="plan-pill">{sub.plan}</span>
-                </td>
-                <td className="text-soft">{sub.cycle}</td>
-                <td className="fw-700">{sub.price}</td>
-                <td>
-                  <div className="date-info">
-                    <Calendar size={14} /> {sub.nextBilling}
-                  </div>
-                </td>
-                <td>
-                  <span
-                    className={`status-badge-sub ${getStatusClass(sub.status)}`}
-                  >
-                    {sub.status}
-                  </span>
-                </td>
-                <td className="col-actions">
-                  <button className="btn-icon-action">
-                    <MoreVertical size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* --- MODAL CREAR SUSCRIPCIÓN --- */}
