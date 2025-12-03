@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+// Ajusta la ruta de importación si moviste el archivo AuthContext
+import { AuthContext } from "../../../admin-cliente/config/AuthContext";
 import "./Sidebar.css";
-// Asegúrate de que esta ruta sea la correcta para tu imagen
 import logo from "/src/assets/Logo_v.png";
 import {
   Menu,
@@ -10,55 +11,73 @@ import {
   CreditCard,
   ChevronUp,
   ChevronDown,
+  Crown,
 } from "lucide-react";
 
 const Sidebar = ({
-  menuItems = [],
+  menuItems,
   basePath = "/cliente",
-  userRole = "admin",
   companyName = "Mi Empresa",
 }) => {
+  // Consumimos el contexto real para saber roles y plan
+  const { user, plan, hasModule, logout } = useContext(AuthContext);
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Navegación simple y robusta
   const handleNavigation = (path) => {
-    // Aseguramos que la ruta base tenga el formato correcto
+    // Normalización de rutas para evitar //dobles//slashes
     const root = basePath.startsWith("/") ? basePath : `/${basePath}`;
-    navigate(`${root}/${path}`);
+    const finalBase = root.endsWith("/") ? root.slice(0, -1) : root;
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    navigate(`${finalBase}/${cleanPath}`);
   };
 
   const isActive = (path) => {
-    return location.pathname.includes(path);
+    const root = basePath.startsWith("/") ? basePath : `/${basePath}`;
+    return location.pathname.includes(`${root}/${path}`);
   };
 
   const handleLogout = (e) => {
     e.preventDefault();
-    navigate("/");
+    logout(); // Limpia el AuthContext y localStorage
+    navigate("/"); // Redirige al login
   };
 
-  // --- CORRECCIÓN DEL ERROR ---
+  // Filtrar menú por ROL y PLAN (Tu lógica original)
   const filteredMenuItems = menuItems.filter((item) => {
-    // 1. Validación de seguridad: Si el item es undefined, lo ignoramos
-    if (!item) return false;
-
-    // 2. Si no tiene la propiedad 'allowedRoles', asumimos que es público (se muestra)
-    // Esto evita el error "reading 'includes' of undefined"
-    if (!item.allowedRoles) return true;
-
-    // 3. Si tiene la propiedad, verificamos si el rol del usuario está permitido
-    return item.allowedRoles.includes(userRole);
+    // 1. Verificar rol
+    if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) {
+      return false;
+    }
+    // 2. Verificar módulo del plan
+    if (item.module && !hasModule(item.module)) {
+      return false;
+    }
+    return true;
   });
+
+  // Datos visuales seguros
+  const userRole = user?.role || "Usuario";
+  const planName = plan?.config?.name || "Plan";
 
   return (
     <aside className={`sidebar-container ${isCollapsed ? "collapsed" : ""}`}>
+      {/* Header */}
       <div className="sidebar-header">
         <div className={`brand-wrapper ${isCollapsed ? "hidden" : ""}`}>
           <img src={logo} alt="Logo" className="brand-logo" />
-          <span className="brand-name">{companyName}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <span className="brand-name">{companyName}</span>
+            <span
+              style={{ fontSize: "11px", color: "#64748b", fontWeight: "500" }}
+            >
+              {planName}
+            </span>
+          </div>
         </div>
 
         <button
@@ -69,6 +88,7 @@ const Sidebar = ({
         </button>
       </div>
 
+      {/* Navigation */}
       <nav className="sidebar-nav">
         <ul>
           {filteredMenuItems.map((item, index) => (
@@ -86,61 +106,90 @@ const Sidebar = ({
                 title={isCollapsed ? item.title : ""}
               >
                 <span className="nav-icon">{item.icon}</span>
-                {!isCollapsed && <span className="nav-text">{item.title}</span>}
+                {!isCollapsed && (
+                  <>
+                    <span className="nav-text">{item.title}</span>
+                    {/* Badge para límites del plan */}
+                    {item.badge && plan?.config?.limits?.maxBranches && (
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          backgroundColor: "#3b82f6",
+                          color: "white",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          marginLeft: "auto",
+                        }}
+                      >
+                        {plan.config.limits.maxBranches === null
+                          ? "∞"
+                          : plan.config.limits.maxBranches}
+                      </span>
+                    )}
+                  </>
+                )}
               </a>
             </li>
           ))}
         </ul>
       </nav>
 
+      {/* Upgrade Banner (Solo si no es Premium) */}
+
+      {/* Footer */}
       <div className="sidebar-footer">
-        <div className="settings-group">
-          <a
-            href="#"
-            className={`nav-link footer-link`}
-            onClick={(e) => {
-              e.preventDefault();
-              if (!isCollapsed) setIsSettingsOpen(!isSettingsOpen);
-            }}
-          >
-            <span className="nav-icon">
-              <Settings size={20} />
-            </span>
-            {!isCollapsed && (
-              <>
-                <span className="nav-text" style={{ flex: 1 }}>
-                  Mi cuenta
-                </span>
-                {isSettingsOpen ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
-              </>
+        {/* Mi cuenta (Toggle) */}
+        {userRole !== "super-admin" && (
+          <div className="settings-group">
+            <a
+              href="#"
+              className="nav-link footer-link"
+              onClick={(e) => {
+                e.preventDefault();
+                if (!isCollapsed) setIsSettingsOpen(!isSettingsOpen);
+              }}
+            >
+              <span className="nav-icon">
+                <Settings size={20} />
+              </span>
+              {!isCollapsed && (
+                <>
+                  <span className="nav-text" style={{ flex: 1 }}>
+                    Mi cuenta
+                  </span>
+                  {isSettingsOpen ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </>
+              )}
+            </a>
+
+            {/* Submenu Suscripción */}
+            {!isCollapsed && isSettingsOpen && hasModule("subscription") && (
+              <div className="settings-submenu">
+                <a
+                  href="#"
+                  className={`nav-link submenu-link ${
+                    isActive("Subcription") ? "active" : ""
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("Subcription");
+                  }}
+                >
+                  <span className="nav-icon">
+                    <CreditCard size={18} />
+                  </span>
+                  <span className="nav-text">Mi Suscripción</span>
+                </a>
+              </div>
             )}
-          </a>
+          </div>
+        )}
 
-          {!isCollapsed && isSettingsOpen && (
-            <div className="settings-submenu">
-              <a
-                href="#"
-                className={`nav-link submenu-link ${
-                  isActive("Subcriptions") ? "active" : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavigation("Subcription");
-                }}
-              >
-                <span className="nav-icon">
-                  <CreditCard size={18} />
-                </span>
-                <span className="nav-text">Mi Suscripción</span>
-              </a>
-            </div>
-          )}
-        </div>
-
+        {/* Botón Salir */}
         <a
           href="#"
           className="nav-link footer-link logout"

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../../admin-cliente/config/api"; // Conexión API
 import "./ClientAdmins.css";
 import "/src/App.css";
 import {
@@ -7,52 +8,95 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  Mail,
   Building2,
   Key,
   Shield,
-  ExternalLink,
   Activity,
   Power,
-  Edit,
   X,
   Save,
+  Loader2,
 } from "lucide-react";
 
 const ClientAdmins = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // ESTADOS CONECTADOS
+  const [admins, setAdmins] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Formulario
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    empresa_id: "", // Asumiendo que asignas una empresa
+  });
+
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  const admins = [
-    {
-      id: 101,
-      name: "Pedro Machuca",
-      email: "pedro@laespiga.cl",
-      company: "Panadería La Espiga",
-      status: true,
-      lastLogin: "Hace 2 horas",
-      activity: [],
-    },
-    {
-      id: 102,
-      name: "Ana Ruiz",
-      email: "ana@ferrecentro.cl",
-      company: "Ferretería Centro",
-      status: true,
-      lastLogin: "Ayer",
-      activity: [],
-    },
-  ];
-
-  const handleSave = (e) => {
-    e.preventDefault();
-    alert("Admin creado");
-    setShowModal(false);
+  // 1. CARGAR ADMINS
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true);
+      // Nota: En el Master, esto listará usuarios del staff o superusers si usas el modelo default
+      // O usuarios de una tabla custom si la creaste en el master.
+      const res = await api.get("/usuarios/");
+      setAdmins(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  // 2. CREAR ADMIN
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/usuarios/", {
+        ...formData,
+        role: "admin_cliente", // Forzamos el rol
+      });
+      alert("Admin creado exitosamente");
+      setShowModal(false);
+      fetchAdmins();
+    } catch (err) {
+      alert(
+        "Error al crear admin: " +
+          (err.response?.data?.detail || "Revise los datos")
+      );
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.type === "select-one"
+        ? "empresa_id"
+        : e.target.type === "email"
+        ? "email"
+        : "username"]: e.target.value,
+    });
+    // Nota: Ajusta los nombres de inputs según tu necesidad real
+  };
+
+  if (loading)
+    return (
+      <div
+        className="loader-container"
+        style={{ display: "flex", justifyContent: "center", padding: "50px" }}
+      >
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
 
   return (
     <div className="client-admins-container">
@@ -86,6 +130,12 @@ const ClientAdmins = () => {
       </div>
 
       <div className="ca-list-body">
+        {admins.length === 0 && (
+          <p style={{ padding: "20px", textAlign: "center" }}>
+            No hay administradores registrados.
+          </p>
+        )}
+
         {admins.map((admin) => (
           <div
             key={admin.id}
@@ -100,23 +150,27 @@ const ClientAdmins = () => {
                 </div>
               </div>
               <div className="col-info">
-                <span className="a-name">{admin.name}</span>
+                <span className="a-name">{admin.username}</span>
                 <span className="a-email">{admin.email}</span>
               </div>
               <div className="col-company">
                 <div className="company-badge">
-                  <Building2 size={14} /> {admin.company}
+                  <Building2 size={14} /> {admin.empresa_id || "Sin Asignar"}
                 </div>
               </div>
               <div className="col-last-login">
                 <small>Último acceso:</small>
-                <span>{admin.lastLogin}</span>
+                <span>
+                  {admin.last_login
+                    ? new Date(admin.last_login).toLocaleDateString()
+                    : "Nunca"}
+                </span>
               </div>
               <div className="col-status">
                 <span
-                  className={`status-dot ${admin.status ? "green" : "red"}`}
+                  className={`status-dot ${admin.is_active ? "green" : "red"}`}
                 ></span>
-                {admin.status ? "Activo" : "Inactivo"}
+                {admin.is_active ? "Activo" : "Inactivo"}
               </div>
               <div className="col-action">
                 <button className="btn-expand">
@@ -139,17 +193,14 @@ const ClientAdmins = () => {
                       <button className="btn-sec-action reset">
                         <Key size={16} /> Resetear Contraseña
                       </button>
-                      <button className="btn-sec-action sudo">
-                        <ExternalLink size={16} /> Acceso Directo (Sudo)
-                      </button>
                       <div className="divider-h"></div>
                       <button
                         className={`btn-sec-action power ${
-                          admin.status ? "text-red" : "text-green"
+                          admin.is_active ? "text-red" : "text-green"
                         }`}
                       >
                         <Power size={16} />{" "}
-                        {admin.status ? "Desactivar" : "Activar"}
+                        {admin.is_active ? "Desactivar" : "Activar"}
                       </button>
                     </div>
                   </div>
@@ -161,8 +212,10 @@ const ClientAdmins = () => {
                       <div className="timeline-item">
                         <div className="timeline-dot"></div>
                         <div className="timeline-content">
-                          <span className="t-action">Inicio de sesión</span>
-                          <span className="t-date">Hoy, 09:00 AM</span>
+                          <span className="t-action">Registro en sistema</span>
+                          <span className="t-date">
+                            {new Date(admin.date_joined).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -189,26 +242,48 @@ const ClientAdmins = () => {
             </div>
             <form className="form-layout" onSubmit={handleSave}>
               <div className="form-group">
-                <label>Nombre Completo</label>
-                <input type="text" required />
+                <label>Nombre Usuario / Completo</label>
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>Correo Electrónico</label>
-                <input type="email" required />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
               </div>
               <div className="form-group">
-                <label>Asignar a Empresa</label>
-                <select required>
-                  <option value="">Seleccionar Empresa...</option>
-                  <option>Ferretería Centro</option>
-                  <option>Panadería La Espiga</option>
-                </select>
+                <label>Asignar a Empresa (ID)</label>
+                {/* Idealmente sería un Select cargado desde /empresas/ */}
+                <input
+                  type="number"
+                  placeholder="ID Empresa"
+                  value={formData.empresa_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, empresa_id: e.target.value })
+                  }
+                />
               </div>
               <div className="form-group">
                 <label>Contraseña Provisoria</label>
                 <input
                   type="password"
                   placeholder="******"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   required
                   minLength="6"
                 />

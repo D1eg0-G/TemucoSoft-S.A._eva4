@@ -1,16 +1,17 @@
+// src/admin-cliente/Layout.jsx
+
+import { useContext } from "react";
 import { useLocation } from "react-router-dom";
+import { AuthContext } from "./config/AuthContext";
 import Sidebar from "../core/layout/Sidebar/Sidebar";
 import Header from "../core/layout/Header/Header";
 import { menuCliente } from "./config/menu";
-import { useUserRole } from "../context/UserContext"; // <--- Importamos el hook
 
 export default function ClienteLayout({ children, title: defaultTitle }) {
   const location = useLocation();
+  const { user, plan } = useContext(AuthContext);
 
-  // USAMOS EL CONTEXTO GLOBAL
-  const { userRole, setUserRole } = useUserRole();
-
-  // Lógica del título dinámico
+  // Título dinámico
   const currentPath = location.pathname.split("/").pop();
   const activeItem = menuCliente.find(
     (item) => item.path.toLowerCase() === currentPath.toLowerCase()
@@ -29,12 +30,10 @@ export default function ClienteLayout({ children, title: defaultTitle }) {
         overflow: "hidden",
       }}
     >
-      {/* Pasamos el rol al Sidebar para que oculte menús */}
       <Sidebar
         menuItems={menuCliente}
         basePath="/cliente"
-        userRole={userRole}
-        companyName="Los Aromos" // <--- O el nombre dinámico de la pyme
+        companyName={user?.empresa_nombre || "Los Aromos"}
       />
 
       <div
@@ -46,8 +45,7 @@ export default function ClienteLayout({ children, title: defaultTitle }) {
           overflow: "hidden",
         }}
       >
-        {/* Pasamos el rol al Header para que cambie el título y avatar */}
-        <Header title={dynamicTitle} userRole={userRole} />
+        <Header title={dynamicTitle} userRole={user?.role} />
 
         <main
           className="content"
@@ -61,46 +59,40 @@ export default function ClienteLayout({ children, title: defaultTitle }) {
         >
           {children}
 
-          {/* --- SELECTOR DE PRUEBA --- */}
-          <div
-            style={{
-              position: "fixed",
-              bottom: 20,
-              right: 20,
-              background: "white",
-              padding: 10,
-              borderRadius: 8,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              border: "1px solid #e2e8f0",
-              zIndex: 9999,
-            }}
-          >
-            <small
+          {/* Selector de prueba (SOLO EN DESARROLLO) */}
+          {import.meta.env.DEV && (
+            <div
               style={{
-                display: "block",
-                marginBottom: 5,
-                fontWeight: 600,
-                color: "#333",
+                position: "fixed",
+                bottom: 20,
+                right: 20,
+                background: "white",
+                padding: 10,
+                borderRadius: 8,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                border: "1px solid #e2e8f0",
+                zIndex: 9999,
               }}
             >
-              Simular Rol:
-            </small>
-            <select
-              value={userRole}
-              onChange={(e) => setUserRole(e.target.value)}
-              style={{
-                padding: 5,
-                borderRadius: 4,
-                border: "1px solid #ccc",
-                width: "100%",
-                color: "#333",
-              }}
-            >
-              <option value="admin">Dueño (Admin)</option>
-              <option value="gerente">Gerente</option>
-              <option value="vendedor">Vendedor</option>
-            </select>
-          </div>
+              <small
+                style={{
+                  display: "block",
+                  marginBottom: 5,
+                  fontWeight: 600,
+                  color: "#333",
+                }}
+              >
+                🧪 Debug Info:
+              </small>
+              <div style={{ fontSize: "11px", color: "#666" }}>
+                <strong>Rol:</strong> {user?.role || "N/A"}
+                <br />
+                <strong>Plan:</strong> {plan?.tipo || "N/A"}
+                <br />
+                <strong>Módulos:</strong> {plan?.modulos?.length || 0}
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -1,30 +1,47 @@
 import React, { useState, useEffect, useRef } from "react";
+import api from "../../../admin-cliente/config/api"; // Ruta ajustada
 import "./SubscriptionsTS.css";
 import {
   Search,
   Plus,
-  Download,
   CreditCard,
   Calendar,
   AlertTriangle,
   CheckCircle,
   MoreVertical,
-  RefreshCw,
-  ArrowUpRight,
   X,
   Save,
-  XCircle,
-  FileClock,
+  Loader2,
   Edit,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 
 const SubscriptionsTS = () => {
-  const [activeTab, setActiveTab] = useState("Activas");
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Estado para el menú desplegable
+  // ESTADOS CONECTADOS
+  const [subs, setSubs] = useState([]);
+  const [planes, setPlanes] = useState([]);
+  const [empresas, setEmpresas] = useState([]);
+
+  // Estado para Menú Desplegable
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef();
+
+  // Estado para Edición
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  // Formulario (Coincide con modelo Suscripcion)
+  const [formData, setFormData] = useState({
+    empresa: "",
+    plan: "",
+    fecha_inicio: new Date().toISOString().split("T")[0],
+    activo: true,
+    estado: "activa",
+  });
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -37,180 +54,156 @@ const SubscriptionsTS = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleMenu = (id) => {
-    setOpenMenuId(openMenuId === id ? null : id);
-  };
-
-  const subscriptions = [
-    {
-      id: "SUB-1001",
-      company: "Ferretería Centro",
-      plan: "Premium",
-      price: "$120.000",
-      cycle: "Mensual",
-      startDate: "01/01/2024",
-      nextBilling: "01/12/2025",
-      status: "Activa",
-    },
-    {
-      id: "SUB-1002",
-      company: "Panadería La Espiga",
-      plan: "Estándar",
-      price: "$45.000",
-      cycle: "Mensual",
-      startDate: "15/06/2022",
-      nextBilling: "15/11/2025",
-      status: "Por Vencer",
-    },
-  ];
-
-  const filteredSubs =
-    activeTab === "Activas"
-      ? subscriptions.filter((s) => s.status === "Activa")
-      : subscriptions;
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Activa":
-        return "badge-green";
-      case "Por Vencer":
-        return "badge-orange";
-      default:
-        return "badge-gray";
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [resSubs, resPlanes, resEmpresas] = await Promise.all([
+        api.get("/suscripciones/"),
+        api.get("/planes/"),
+        api.get("/empresas/"),
+      ]);
+      setSubs(resSubs.data);
+      setPlanes(resPlanes.data);
+      setEmpresas(resEmpresas.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAction = (action, id) => {
-    console.log(action, id);
-    setOpenMenuId(null);
-    // Aquí iría la lógica real
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // --- MANEJADORES DE ACCIONES ---
+
+  const handleOpenCreate = () => {
+    setFormData({
+      empresa: "",
+      plan: "",
+      fecha_inicio: new Date().toISOString().split("T")[0],
+      activo: true,
+      estado: "activa",
+    });
+    setIsEditMode(false);
+    setShowModal(true);
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    alert("Suscripción creada");
-    setShowModal(false);
+  const handleOpenEdit = (sub) => {
+    setFormData({
+      empresa: sub.empresa, // Asegúrate de que el serializer devuelva el ID aquí
+      plan: sub.plan, // Asegúrate de que el serializer devuelva el ID aquí
+      fecha_inicio: sub.fecha_inicio,
+      activo: sub.activo,
+      estado: sub.estado || "activa",
+    });
+    setEditingId(sub.id);
+    setIsEditMode(true);
+    setShowModal(true);
+    setOpenMenuId(null);
   };
+
+  const handleCancelSub = async (id) => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de cancelar esta suscripción? El cliente perderá acceso."
+      )
+    )
+      return;
+
+    try {
+      await api.patch(`/suscripciones/${id}/`, {
+        estado: "cancelada",
+        activo: false,
+      });
+      alert("Suscripción cancelada exitosamente");
+      fetchData();
+    } catch (err) {
+      alert("Error al cancelar: " + JSON.stringify(err.response?.data));
+    }
+    setOpenMenuId(null);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      if (isEditMode) {
+        await api.put(`/suscripciones/${editingId}/`, formData);
+        alert("Suscripción actualizada");
+      } else {
+        await api.post("/suscripciones/", formData);
+        alert("Suscripción creada");
+      }
+      setShowModal(false);
+      fetchData();
+    } catch (err) {
+      alert("Error: " + JSON.stringify(err.response?.data));
+    }
+  };
+
+  const toggleMenu = (id) => setOpenMenuId(openMenuId === id ? null : id);
+
+  const getStatusClass = (status, activo) => {
+    if (!activo || status === "cancelada") return "status-badge-sub inactive"; // Usar clase CSS gris/roja
+    if (status === "activa") return "status-badge-sub active";
+    return "status-badge-sub warning";
+  };
+
+  if (loading)
+    return (
+      <div
+        className="loader-container"
+        style={{ padding: "50px", textAlign: "center" }}
+      >
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
 
   return (
     <div className="subs-ts-container">
       <div className="subs-header">
         <div>
           <h2 className="page-title">Gestión de Suscripciones</h2>
-          <p className="page-subtitle">
-            Administración de planes y facturación recurrente
-          </p>
         </div>
         <div className="header-actions">
-          <button className="btn-secondary-sub">
-            <Download size={18} /> Reporte MRR
-          </button>
-          <button
-            className="btn-primary-sub"
-            onClick={() => setShowModal(true)}
-          >
+          <button className="btn-primary-sub" onClick={handleOpenCreate}>
             <Plus size={18} /> Crear Suscripción
           </button>
         </div>
       </div>
 
-      <div className="subs-kpi-grid">
-        <div className="skpi-card">
-          <div className="skpi-icon blue">
-            <CreditCard size={22} />
-          </div>
-          <div className="skpi-info">
-            <span>Ingresos (MRR)</span>
-            <h3>$8.4M</h3>
-          </div>
-        </div>
-        <div className="skpi-card green">
-          <div className="skpi-icon green">
-            <CheckCircle size={22} />
-          </div>
-          <div className="skpi-info">
-            <span>Activas</span>
-            <h3>142</h3>
-          </div>
-        </div>
-        <div className="skpi-card orange">
-          <div className="skpi-icon orange">
-            <AlertTriangle size={22} />
-          </div>
-          <div className="skpi-info">
-            <span>Vencimientos</span>
-            <h3>8</h3>
-          </div>
-        </div>
-      </div>
-
-      <div className="subs-toolbar">
-        <div className="subs-tabs">
-          <button
-            className={`stab ${activeTab === "Activas" ? "active" : ""}`}
-            onClick={() => setActiveTab("Activas")}
-          >
-            Activas
-          </button>
-          <button
-            className={`stab ${activeTab === "Por Vencer" ? "active" : ""}`}
-            onClick={() => setActiveTab("Por Vencer")}
-          >
-            Por Vencer
-          </button>
-        </div>
-        <div className="search-box-sub">
-          <Search size={18} />
-          <input type="text" placeholder="Buscar empresa o ID..." />
-        </div>
-      </div>
-
       <div className="subs-table-card">
         <div className="subs-table-header">
-          <div className="col-comp">EMPRESA CLIENTE</div>
+          <div className="col-comp">EMPRESA</div>
           <div className="col-plan">PLAN</div>
-          <div className="col-cycle">CICLO</div>
-          <div className="col-price">PRECIO</div>
-          <div className="col-next">PRÓXIMA FACTURACIÓN</div>
+          <div className="col-cycle">FECHA INICIO</div>
           <div className="col-status">ESTADO</div>
           <div className="col-action"></div>
         </div>
 
         <div className="subs-list-body" ref={menuRef}>
-          {filteredSubs.map((sub) => (
-            <div
-              key={sub.id}
-              className={`subs-row ${
-                sub.status === "Vencida" ? "row-warning" : ""
-              }`}
-            >
+          {subs.map((sub) => (
+            <div key={sub.id} className="subs-row">
               <div className="col-comp">
-                <div className="col-company-sub">
-                  <span className="c-name">{sub.company}</span>
-                  <span className="c-id">{sub.id}</span>
-                </div>
+                {/* Si el serializer trae objetos anidados, usa sub.empresa.nombre, sino sub.empresa_nombre */}
+                <span className="c-name">
+                  {sub.empresa_nombre || `Empresa #${sub.empresa}`}
+                </span>
               </div>
               <div className="col-plan">
-                <span className="plan-pill">{sub.plan}</span>
+                <span className="plan-pill">
+                  {sub.plan_nombre || `Plan #${sub.plan}`}
+                </span>
               </div>
-              <div className="col-cycle">{sub.cycle}</div>
-              <div className="col-price">
-                <strong>{sub.price}</strong>
-              </div>
-              <div className="col-next">
-                <div className="date-info">
-                  <Calendar size={14} /> {sub.nextBilling}
-                </div>
-              </div>
+              <div className="col-cycle">{sub.fecha_inicio}</div>
               <div className="col-status">
-                <span
-                  className={`status-badge-sub ${getStatusClass(sub.status)}`}
-                >
-                  {sub.status}
+                <span className={getStatusClass(sub.estado, sub.activo)}>
+                  {sub.estado || (sub.activo ? "Activa" : "Inactiva")}
                 </span>
               </div>
 
-              {/* MENÚ DE ACCIONES (3 Puntos) */}
+              {/* MENÚ DE ACCIONES */}
               <div className="col-action relative-container">
                 <button className="btn-dots" onClick={() => toggleMenu(sub.id)}>
                   <MoreVertical size={18} />
@@ -220,41 +213,32 @@ const SubscriptionsTS = () => {
                   <div className="action-dropdown">
                     <button
                       className="dropdown-item"
-                      onClick={() => handleAction("edit", sub.id)}
+                      onClick={() => handleOpenEdit(sub)}
                     >
                       <Edit size={16} /> Editar
                     </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleAction("upgrade", sub.id)}
-                    >
-                      <ArrowUpRight size={16} /> Cambiar Plan
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleAction("history", sub.id)}
-                    >
-                      <FileClock size={16} /> Ver Historial
-                    </button>
-
-                    {(sub.status === "Por Vencer" ||
-                      sub.status === "Vencida") && (
+                    {sub.activo && sub.estado !== "cancelada" && (
                       <button
-                        className="dropdown-item highlight"
-                        onClick={() => handleAction("renew", sub.id)}
+                        className="dropdown-item delete"
+                        onClick={() => handleCancelSub(sub.id)}
                       >
-                        <RefreshCw size={16} /> Renovar
+                        <XCircle size={16} /> Cancelar
                       </button>
                     )}
-
-                    <div className="divider-h"></div>
-
-                    <button
-                      className="dropdown-item delete"
-                      onClick={() => handleAction("cancel", sub.id)}
-                    >
-                      <XCircle size={16} /> Cancelar
-                    </button>
+                    {(!sub.activo || sub.estado === "cancelada") && (
+                      <button
+                        className="dropdown-item highlight"
+                        onClick={() =>
+                          handleOpenEdit({
+                            ...sub,
+                            activo: true,
+                            estado: "activa",
+                          })
+                        }
+                      >
+                        <RefreshCw size={16} /> Reactivar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -263,12 +247,12 @@ const SubscriptionsTS = () => {
         </div>
       </div>
 
-      {/* --- MODAL CREAR SUSCRIPCIÓN --- */}
+      {/* MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Nueva Suscripción</h3>
+              <h3>{isEditMode ? "Editar Suscripción" : "Nueva Suscripción"}</h3>
               <button
                 className="btn-close-modal"
                 onClick={() => setShowModal(false)}
@@ -278,47 +262,72 @@ const SubscriptionsTS = () => {
             </div>
             <form className="form-layout" onSubmit={handleSave}>
               <div className="form-group">
-                <label>
-                  Empresa Cliente <span className="req">*</span>
-                </label>
-                <select required>
+                <label>Empresa Cliente</label>
+                <select
+                  value={formData.empresa}
+                  onChange={(e) =>
+                    setFormData({ ...formData, empresa: e.target.value })
+                  }
+                  required
+                  disabled={isEditMode} // Generalmente no se cambia la empresa de una suscripción
+                >
                   <option value="">Seleccionar Empresa...</option>
-                  <option>Panadería La Espiga</option>
-                  <option>Botillería El Paso</option>
+                  {empresas.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.nombre} ({e.rut})
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Plan</label>
-                  <select>
-                    <option>Básico</option>
-                    <option>Estándar</option>
-                    <option>Premium</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Ciclo de Facturación</label>
-                  <select>
-                    <option>Mensual</option>
-                    <option>Anual (-10%)</option>
-                  </select>
-                </div>
+
+              <div className="form-group">
+                <label>Plan</label>
+                <select
+                  value={formData.plan}
+                  onChange={(e) =>
+                    setFormData({ ...formData, plan: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">Seleccionar Plan...</option>
+                  {planes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} (${p.precio_mensual})
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Precio Pactado</label>
-                  <input
-                    type="number"
-                    placeholder="$ 45.000"
-                    required
-                    min="0"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Fecha Inicio</label>
-                  <input type="date" required />
-                </div>
+
+              <div className="form-group">
+                <label>Fecha Inicio</label>
+                <input
+                  type="date"
+                  value={formData.fecha_inicio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fecha_inicio: e.target.value })
+                  }
+                  required
+                />
               </div>
+
+              <div className="form-group">
+                <label>Estado</label>
+                <select
+                  value={formData.estado}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      estado: e.target.value,
+                      activo: e.target.value === "activa",
+                    })
+                  }
+                >
+                  <option value="activa">Activa</option>
+                  <option value="suspendida">Suspendida</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+
               <div className="modal-footer">
                 <button
                   type="button"
@@ -328,7 +337,8 @@ const SubscriptionsTS = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-solid">
-                  <Save size={18} /> Activar Suscripción
+                  <Save size={18} />{" "}
+                  {isEditMode ? "Guardar Cambios" : "Activar"}
                 </button>
               </div>
             </form>

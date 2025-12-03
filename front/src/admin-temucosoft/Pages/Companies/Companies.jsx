@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../../admin-cliente/config/api";
 import "./Companies.css";
 import "/src/App.css";
 import {
@@ -10,7 +11,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  ExternalLink,
   Power,
   Edit,
   Users,
@@ -18,89 +18,101 @@ import {
   CreditCard,
   X,
   Save,
+  Loader2,
 } from "lucide-react";
-// Asegúrate de tener esta utilidad creada, si no, elimínala y usa validación simple
-import { validateRut, formatRut } from "../../../core/utils/rutValidation";
 
 const Companies = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Estado del formulario
+  // DATOS REALES
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Estado del formulario - ✅ CORREGIDO: email en lugar de email_contacto
   const [formData, setFormData] = useState({
-    name: "",
+    nombre: "",
     rut: "",
-    contact: "",
-    email: "",
-    phone: "",
-    plan: "Estándar",
+    email: "", // ✅ CAMBIO: Ahora coincide con el modelo Django
+    telefono: "",
+    direccion: "", // ✅ AGREGADO: Campo del modelo
+    // Campos técnicos para la conexión (Opcionales)
+    db_name: "",
+    db_user: "",
+    db_password: "",
+    db_host: "",
   });
-  const [rutError, setRutError] = useState(false);
+
+  // 1. CARGAR EMPRESAS
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/empresas/");
+      setCompanies(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  // Datos simulados
-  const companies = [
-    {
-      id: 1,
-      name: "Panadería La Espiga",
-      rut: "76.111.222-3",
-      contact: "Pedro Machuca",
-      email: "contacto@laespiga.cl",
-      phone: "+56 9 8877 6655",
-      plan: "Estándar",
-      status: "Activo",
-      registered: "15/06/2022",
-      stats: { users: 5, branches: 2, storage: "12GB" },
-      limits: { users: 10, branches: 3 },
-      payments: [
-        { id: 101, date: "15/11/2025", amount: "$45.000", status: "Pagado" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Ferretería Centro",
-      rut: "77.222.333-K",
-      contact: "Ana Ruiz",
-      email: "admin@ferrecentro.cl",
-      phone: "+56 45 233 4455",
-      plan: "Premium",
-      status: "Activo",
-      registered: "10/01/2023",
-      stats: { users: 18, branches: 5, storage: "45GB" },
-      limits: { users: 999, branches: 999 },
-      payments: [
-        { id: 205, date: "01/11/2025", amount: "$120.000", status: "Pagado" },
-      ],
-    },
-  ];
-
   const getPlanClass = (plan) => {
-    if (plan === "Premium") return "badge-purple";
-    if (plan === "Estándar") return "badge-blue";
+    if (!plan) return "badge-gray";
+    const pName = plan.nombre?.toLowerCase() || "";
+    if (pName.includes("premium")) return "badge-purple";
+    if (pName.includes("estándar") || pName.includes("estandar"))
+      return "badge-blue";
     return "badge-gray";
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "rut") {
-      // Si tienes la función de formateo
-      const formatted = formatRut ? formatRut(value) : value;
-      setFormData({ ...formData, [name]: formatted });
-      if (validateRut) setRutError(!validateRut(formatted));
-    } else {
-      setFormData({ ...formData, [name]: value });
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // 2. GUARDAR EMPRESA
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/empresas/", formData);
+      alert("Empresa creada exitosamente");
+      setShowModal(false);
+      fetchCompanies();
+      // Reset form
+      setFormData({
+        nombre: "",
+        rut: "",
+        email: "",
+        telefono: "",
+        direccion: "",
+        db_name: "",
+        db_user: "",
+        db_password: "",
+        db_host: "",
+      });
+    } catch (err) {
+      console.error("Error completo:", err.response?.data);
+      alert("Error al crear empresa: " + JSON.stringify(err.response?.data));
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (rutError) return alert("RUT Inválido");
-    alert("Empresa creada exitosamente");
-    setShowModal(false);
-  };
+  if (loading)
+    return (
+      <div
+        className="loader-container"
+        style={{ display: "flex", justifyContent: "center", padding: "50px" }}
+      >
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
 
   return (
     <div className="companies-container">
@@ -152,24 +164,26 @@ const Companies = () => {
                 </div>
               </div>
               <div className="col-info">
-                <span className="c-name">{company.name}</span>
+                <span className="c-name">{company.nombre}</span>
                 <span className="c-rut">{company.rut}</span>
               </div>
               <div className="col-plan">
-                <span className={`plan-badge ${getPlanClass(company.plan)}`}>
-                  {company.plan}
+                <span
+                  className={`plan-badge ${getPlanClass(
+                    company.suscripcion?.plan
+                  )}`}
+                >
+                  {company.suscripcion?.plan?.nombre || "Sin Plan"}
                 </span>
               </div>
               <div className="col-contact-short">
-                <span className="c-contact-name">{company.contact}</span>
+                <span className="c-contact-name">{company.email}</span>
               </div>
               <div className="col-status">
                 <span
-                  className={`status-dot ${
-                    company.status === "Activo" ? "green" : "red"
-                  }`}
+                  className={`status-dot ${company.activo ? "green" : "red"}`}
                 ></span>
-                {company.status}
+                {company.activo ? "Activo" : "Inactivo"}
               </div>
               <div className="col-action">
                 <button className="btn-expand">
@@ -190,26 +204,24 @@ const Companies = () => {
                       <Mail size={16} /> {company.email}
                     </div>
                     <div className="ds-item">
-                      <Phone size={16} /> {company.phone}
+                      <Phone size={16} /> {company.telefono || "N/A"}
                     </div>
                     <div className="ds-item">
-                      <Calendar size={16} /> Reg: {company.registered}
+                      <Calendar size={16} /> Reg:{" "}
+                      {new Date(company.fecha_registro).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="ds-actions">
-                    <button className="btn-action-sudo">
-                      <ExternalLink size={16} /> Acceso Panel (Sudo)
-                    </button>
                     <button className="btn-action-edit">
                       <Edit size={16} /> Editar Datos
                     </button>
                     <button
                       className={`btn-action-power ${
-                        company.status === "Activo" ? "danger" : "success"
+                        company.activo ? "danger" : "success"
                       }`}
                     >
                       <Power size={16} />{" "}
-                      {company.status === "Activo" ? "Desactivar" : "Reactivar"}
+                      {company.activo ? "Desactivar" : "Reactivar"}
                     </button>
                   </div>
                 </div>
@@ -224,16 +236,10 @@ const Companies = () => {
                       <div className="res-bar-bg">
                         <div
                           className="res-bar-fill"
-                          style={{
-                            width: `${
-                              (company.stats.users / company.limits.users) * 100
-                            }%`,
-                          }}
+                          style={{ width: "20%" }}
                         ></div>
                       </div>
-                      <span className="res-val">
-                        {company.stats.users} / {company.limits.users}
-                      </span>
+                      <span className="res-val">-- / --</span>
                     </div>
                     <div className="res-item">
                       <div className="res-label">
@@ -242,24 +248,16 @@ const Companies = () => {
                       <div className="res-bar-bg">
                         <div
                           className="res-bar-fill"
-                          style={{
-                            width: `${
-                              (company.stats.branches /
-                                company.limits.branches) *
-                              100
-                            }%`,
-                          }}
+                          style={{ width: "40%" }}
                         ></div>
                       </div>
-                      <span className="res-val">
-                        {company.stats.branches} / {company.limits.branches}
-                      </span>
+                      <span className="res-val">-- / --</span>
                     </div>
                   </div>
                 </div>
                 <div className="detail-section payments">
                   <h4>
-                    <CreditCard size={16} /> Últimos Pagos
+                    <CreditCard size={16} /> Historial Pagos
                   </h4>
                   <table className="mini-table-pay">
                     <thead>
@@ -270,15 +268,24 @@ const Companies = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {company.payments.map((p) => (
-                        <tr key={p.id}>
-                          <td>{p.date}</td>
-                          <td>{p.amount}</td>
-                          <td>
-                            <span className="pay-status ok">{p.status}</span>
-                          </td>
+                      {company.historial_pagos &&
+                        company.historial_pagos.map((p) => (
+                          <tr key={p.id}>
+                            <td>
+                              {new Date(p.fecha_pago).toLocaleDateString()}
+                            </td>
+                            <td>${p.monto}</td>
+                            <td>
+                              <span className="pay-status ok">{p.estado}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      {(!company.historial_pagos ||
+                        company.historial_pagos.length === 0) && (
+                        <tr>
+                          <td colSpan="3">Sin pagos registrados</td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -304,14 +311,14 @@ const Companies = () => {
             <form className="form-layout" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>
-                  Razón Social / Nombre Fantasía <span className="req">*</span>
+                  Razón Social <span className="req">*</span>
                 </label>
                 <input
                   type="text"
-                  name="name"
+                  name="nombre"
                   required
                   placeholder="Ej: Panadería El Trigo"
-                  value={formData.name}
+                  value={formData.nombre}
                   onChange={handleInputChange}
                 />
               </div>
@@ -325,59 +332,60 @@ const Companies = () => {
                     name="rut"
                     required
                     placeholder="76.xxx.xxx-x"
-                    className={rutError ? "input-error" : ""}
                     value={formData.rut}
                     onChange={handleInputChange}
                   />
-                  {rutError && (
-                    <small style={{ color: "red" }}>RUT Inválido</small>
-                  )}
-                </div>
-                <div className="form-group">
-                  <label>Plan Inicial</label>
-                  <select
-                    name="plan"
-                    value={formData.plan}
-                    onChange={handleInputChange}
-                  >
-                    <option>Básico</option>
-                    <option>Estándar</option>
-                    <option>Premium</option>
-                  </select>
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Nombre Contacto</label>
+                  <label>
+                    Email Contacto <span className="req">*</span>
+                  </label>
                   <input
-                    type="text"
-                    name="contact"
+                    type="email"
+                    name="email"
                     required
-                    value={formData.contact}
+                    value={formData.email}
                     onChange={handleInputChange}
+                    placeholder="contacto@empresa.cl"
                   />
                 </div>
                 <div className="form-group">
                   <label>Teléfono</label>
                   <input
                     type="tel"
-                    name="phone"
-                    placeholder="+56 9..."
-                    value={formData.phone}
+                    name="telefono"
+                    placeholder="+56 9 xxxx xxxx"
+                    value={formData.telefono}
                     onChange={handleInputChange}
                   />
                 </div>
               </div>
+
               <div className="form-group">
-                <label>
-                  Email Administrativo <span className="req">*</span>
-                </label>
+                <label>Dirección</label>
                 <input
-                  type="email"
-                  name="email"
-                  required
-                  value={formData.email}
+                  type="text"
+                  name="direccion"
+                  placeholder="Calle, número, ciudad"
+                  value={formData.direccion}
                   onChange={handleInputChange}
+                />
+              </div>
+
+              <hr />
+              <p style={{ fontSize: "12px", color: "#666" }}>
+                Configuración Técnica (Opcional si usa cloud)
+              </p>
+              <div className="form-group">
+                <label>DB Host</label>
+                <input
+                  type="text"
+                  name="db_host"
+                  value={formData.db_host}
+                  onChange={handleInputChange}
+                  placeholder="localhost"
                 />
               </div>
 

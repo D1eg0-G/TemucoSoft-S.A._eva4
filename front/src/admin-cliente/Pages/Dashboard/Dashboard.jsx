@@ -1,5 +1,6 @@
 import React from 'react';
-import { useUserRole } from '../../../context/UserContext'; // <--- Importamos el hook
+import { useContext } from "react";
+import { AuthContext } from '../../config/AuthContext'; // <--- Importamos el hook
 import './Dashboard.css';
 import {
   BarChart,
@@ -33,10 +34,10 @@ import {
 // Componente Principal que decide qué mostrar según el rol
 const Dashboard = () => {
   // LEEMOS EL ROL DEL CONTEXTO
-  const { userRole } = useUserRole(); 
+  const { user, plan } = useContext(AuthContext); 
 
   // Si es Vendedor, mostramos su panel
-  if (userRole === 'vendedor') {
+  if (user.role === 'vendedor') {
     return <SellerDashboard />;
   }
 

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import "./CashRegister.css";
+import React, { useState, useEffect } from "react";
+import api from "../../config/api"; // Tu configuración de API real
+import "./CashRegister.css"; // Tu CSS original
 import {
   Search,
   Filter,
@@ -14,60 +15,102 @@ import {
   CheckCircle,
   RotateCcw,
   Printer,
+  Loader2, // Icono de carga
 } from "lucide-react";
 
 const CashRegister = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
 
-  // Estado simulado: ¿La caja está abierta?
-  const isRegisterOpen = true;
+  // ESTADOS DE DATOS (Backend)
+  const [loading, setLoading] = useState(true);
+  const [cajaActual, setCajaActual] = useState(null); // Objeto sesión actual o null
+  const [history, setHistory] = useState([]); // Array de sesiones cerradas
 
-  // Datos de la sesión ACTUAL (Lo que está pasando ahora)
-  const currentSession = {
-    id: "SES-2024-885",
-    user: "Juan Pérez",
-    openedAt: "30 Nov, 08:00 AM",
-    startAmount: 20000, // Sencillo inicial
-    salesCash: 150000,
-    salesCard: 320000,
-    salesTransfer: 50000,
-    totalExpected: 540000, // start + sales
+  // 1. CARGAR DATOS DE LA API
+  const fetchCajaData = async () => {
+    try {
+      setLoading(true);
+      // Petición al endpoint
+      const res = await api.get("/cajas/");
+
+      // Separar la sesión abierta de las cerradas
+      // Asumimos que si fecha_cierre es null, es la sesión activa
+      const openSession = res.data.find((c) => !c.fecha_cierre);
+      const closedSessions = res.data.filter((c) => c.fecha_cierre); // Podrías ordenar por fecha desc aquí
+
+      setCajaActual(openSession || null);
+      setHistory(closedSessions);
+    } catch (err) {
+      console.error("Error al cargar caja", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Historial de Cierres (Tabla caja_sesion)
-  const history = [
-    {
-      id: "SES-2024-884",
-      date: "29 Nov 2025",
-      user: "Ana Silva",
-      start: 20000,
-      end: 450000,
-      difference: 0,
-      status: "Cuadrado",
-    },
-    {
-      id: "SES-2024-883",
-      date: "28 Nov 2025",
-      user: "Juan Pérez",
-      start: 20000,
-      end: 318000,
-      difference: -2000,
-      status: "Diferencia",
-    },
-    {
-      id: "SES-2024-882",
-      date: "27 Nov 2025",
-      user: "Juan Pérez",
-      start: 20000,
-      end: 500000,
-      difference: 0,
-      status: "Cuadrado",
-    },
-  ];
+  useEffect(() => {
+    fetchCajaData();
+  }, []);
+
+  // 2. ABRIR CAJA
+  const handleOpenRegister = async () => {
+    const monto = prompt("Ingrese monto inicial de apertura:");
+    if (!monto) return;
+
+    try {
+      await api.post("/cajas/", {
+        monto_inicial: parseInt(monto),
+        usuario: 1, // En producción: obtener ID del user context
+        sucursal: 1, // En producción: obtener ID de sucursal user context
+      });
+      alert("Caja abierta exitosamente");
+      fetchCajaData();
+    } catch (e) {
+      alert(
+        "Error al abrir caja: " +
+          (e.response?.data?.detail || "Revise los datos")
+      );
+    }
+  };
+
+  // 3. CERRAR CAJA
+  const handleCloseRegister = async (id) => {
+    const montoFinal = prompt("Ingrese monto final en caja (Arqueo):");
+    if (!montoFinal) return;
+
+    try {
+      await api.patch(`/cajas/${id}/`, {
+        fecha_cierre: new Date().toISOString(),
+        monto_final: parseInt(montoFinal),
+      });
+      alert("Turno cerrado correctamente.");
+      fetchCajaData();
+    } catch (e) {
+      alert("Error al cerrar caja");
+    }
+  };
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
+
+  if (loading) {
+    return (
+      <div
+        className="cash-container"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
+  }
+
+  // Variable derivada para saber si está abierta
+  const isRegisterOpen = !!cajaActual;
 
   return (
     <div className="cash-container">
@@ -90,75 +133,99 @@ const CashRegister = () => {
       </div>
 
       {/* 2. PANEL DE CONTROL (Sesión Actual) */}
-      <div className="current-session-card">
-        <div className="cs-header">
-          <h3>Turno Actual (#{currentSession.id})</h3>
-          <div className="cs-meta">
-            <span>
-              <Wallet size={14} /> Cajero:{" "}
-              <strong>{currentSession.user}</strong>
-            </span>
-            <span>
-              <RotateCcw size={14} /> Apertura:{" "}
-              <strong>{currentSession.openedAt}</strong>
-            </span>
+      {!isRegisterOpen ? (
+        // --- VISTA CAJA CERRADA (Usando tus clases para mantener estilo) ---
+        <div
+          className="current-session-card"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "3rem",
+          }}
+        >
+          <div style={{ marginBottom: "1rem", color: "#64748b" }}>
+            <Lock size={48} />
           </div>
-        </div>
-
-        <div className="cs-grid">
-          {/* Monto Inicial */}
-          <div className="money-card initial">
-            <span className="lbl">Fondo Inicial</span>
-            <div className="amount">
-              ${currentSession.startAmount.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Ventas Efectivo */}
-          <div className="money-card cash">
-            <span className="lbl">
-              <Banknote size={16} /> Ventas Efectivo
-            </span>
-            <div className="amount text-green">
-              +${currentSession.salesCash.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Ventas Tarjeta */}
-          <div className="money-card card">
-            <span className="lbl">
-              <CreditCard size={16} /> Ventas Tarjeta/Transf.
-            </span>
-            <div className="amount text-blue">
-              +$
-              {(
-                currentSession.salesCard + currentSession.salesTransfer
-              ).toLocaleString()}
-            </div>
-          </div>
-
-          {/* Total Esperado */}
-          <div className="money-card total">
-            <span className="lbl">Total en Caja (Estimado)</span>
-            <div className="amount total-val">
-              $
-              {(
-                currentSession.startAmount + currentSession.salesCash
-              ).toLocaleString()}
-            </div>
-            <small className="hint">*Solo efectivo físico</small>
-          </div>
-        </div>
-
-        <div className="cs-actions">
-          <button className="btn-secondary-cash">
-            Ingresar Gasto / Retiro
-          </button>
-          <button className="btn-primary-close">
-            <Lock size={16} /> Realizar Arqueo y Cerrar
+          <h3 style={{ marginBottom: "1.5rem", color: "#0f172a" }}>
+            No hay un turno activo
+          </h3>
+          <button
+            className="btn-primary-close"
+            onClick={handleOpenRegister}
+            style={{ backgroundColor: "#16a34a" }}
+          >
+            <Unlock size={16} /> Abrir Caja Ahora
           </button>
         </div>
-      </div>
+      ) : (
+        // --- VISTA CAJA ABIERTA ---
+        <div className="current-session-card">
+          <div className="cs-header">
+            <h3>Turno Actual (#{cajaActual.id})</h3>
+            <div className="cs-meta">
+              <span>
+                <Wallet size={14} /> Cajero ID:{" "}
+                <strong>{cajaActual.usuario}</strong>
+              </span>
+              <span>
+                <RotateCcw size={14} /> Apertura:{" "}
+                <strong>
+                  {new Date(cajaActual.fecha_apertura).toLocaleTimeString()}
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="cs-grid">
+            {/* Monto Inicial */}
+            <div className="money-card initial">
+              <span className="lbl">Fondo Inicial</span>
+              <div className="amount">
+                ${Number(cajaActual.monto_inicial).toLocaleString()}
+              </div>
+            </div>
+
+            {/* Ventas Efectivo (Placeholder: requieres endpoint de ventas para sumar esto real) */}
+            <div className="money-card cash">
+              <span className="lbl">
+                <Banknote size={16} /> Ventas Efectivo
+              </span>
+              <div className="amount text-green">+$0</div>
+            </div>
+
+            {/* Ventas Tarjeta */}
+            <div className="money-card card">
+              <span className="lbl">
+                <CreditCard size={16} /> Ventas Tarjeta/Transf.
+              </span>
+              <div className="amount text-blue">+$0</div>
+            </div>
+
+            {/* Total Esperado */}
+            <div className="money-card total">
+              <span className="lbl">Total en Caja (Estimado)</span>
+              <div className="amount total-val">
+                ${Number(cajaActual.monto_inicial).toLocaleString()}
+              </div>
+              <small className="hint">*Solo efectivo físico</small>
+            </div>
+          </div>
+
+          <div className="cs-actions">
+            <button className="btn-secondary-cash">
+              Ingresar Gasto / Retiro
+            </button>
+            <button
+              className="btn-primary-close"
+              onClick={() => handleCloseRegister(cajaActual.id)}
+            >
+              <Lock size={16} /> Realizar Arqueo y Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 3. HISTORIAL DE CIERRES */}
       <div className="cash-history-section">
@@ -178,7 +245,7 @@ const CashRegister = () => {
           {/* Header Tabla */}
           <div className="h-table-header">
             <div className="col-date">Fecha</div>
-            <div className="col-user">Cajero</div>
+            <div className="col-user">Cajero (ID)</div>
             <div className="col-start">Inicio</div>
             <div className="col-end">Cierre</div>
             <div className="col-diff">Diferencia</div>
@@ -187,75 +254,96 @@ const CashRegister = () => {
           </div>
 
           {/* Body Tabla */}
-          {history.map((ses) => (
+          {history.length === 0 && (
             <div
-              key={ses.id}
-              className={`history-group ${
-                expandedRowId === ses.id ? "expanded" : ""
-              }`}
+              style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}
             >
-              <div className="history-row" onClick={() => toggleRow(ses.id)}>
-                <div className="col-date">{ses.date}</div>
-                <div className="col-user">{ses.user}</div>
-                <div className="col-start">${ses.start.toLocaleString()}</div>
-                <div className="col-end">${ses.end.toLocaleString()}</div>
-                <div
-                  className={`col-diff ${
-                    ses.difference !== 0 ? "text-red" : "text-green"
-                  }`}
-                >
-                  {ses.difference === 0 ? "--" : `$${ses.difference}`}
-                </div>
-                <div className="col-status">
-                  <span
-                    className={`status-pill ${
-                      ses.status === "Cuadrado" ? "green" : "red"
+              No hay historial de cierres disponible.
+            </div>
+          )}
+
+          {history.map((ses) => {
+            // Calculo simple de diferencia (Monto final - Inicial)
+            // Nota: La diferencia real necesita (Inicial + Ventas - Gastos) vs Final
+            const diff = (ses.monto_final || 0) - (ses.monto_inicial || 0);
+
+            return (
+              <div
+                key={ses.id}
+                className={`history-group ${
+                  expandedRowId === ses.id ? "expanded" : ""
+                }`}
+              >
+                <div className="history-row" onClick={() => toggleRow(ses.id)}>
+                  <div className="col-date">
+                    {new Date(ses.fecha_cierre).toLocaleDateString()}
+                  </div>
+                  <div className="col-user">{ses.usuario}</div>
+                  <div className="col-start">
+                    ${Number(ses.monto_inicial).toLocaleString()}
+                  </div>
+                  <div className="col-end">
+                    ${Number(ses.monto_final).toLocaleString()}
+                  </div>
+                  <div
+                    className={`col-diff ${
+                      diff < 0 ? "text-red" : "text-green"
                     }`}
                   >
-                    {ses.status}
-                  </span>
-                </div>
-                <div className="col-action">
-                  <button className="btn-expand">
-                    {expandedRowId === ses.id ? (
-                      <ChevronUp size={20} />
-                    ) : (
-                      <ChevronDown size={20} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Detalle Expandible */}
-              {expandedRowId === ses.id && (
-                <div className="history-detail">
-                  <div className="detail-grid">
-                    <div>
-                      <small>Ventas Efectivo</small>
-                      <strong>$150.000</strong>
-                    </div>
-                    <div>
-                      <small>Ventas Tarjeta</small>
-                      <strong>$280.000</strong>
-                    </div>
-                    <div>
-                      <small>Total Sistema</small>
-                      <strong>$430.000</strong>
-                    </div>
-                    <div>
-                      <small>Total Real (Contado)</small>
-                      <strong>${ses.end.toLocaleString()}</strong>
-                    </div>
+                    {/* Placeholder, la lógica real depende de las ventas */}
+                    --
                   </div>
-                  <div className="detail-footer">
-                    <button className="btn-print">
-                      <Printer size={16} /> Imprimir Z
+                  <div className="col-status">
+                    <span className="status-pill green">Cerrado</span>
+                  </div>
+                  <div className="col-action">
+                    <button className="btn-expand">
+                      {expandedRowId === ses.id ? (
+                        <ChevronUp size={20} />
+                      ) : (
+                        <ChevronDown size={20} />
+                      )}
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Detalle Expandible */}
+                {expandedRowId === ses.id && (
+                  <div className="history-detail">
+                    <div className="detail-grid">
+                      <div>
+                        <small>Monto Inicial</small>
+                        <strong>
+                          ${Number(ses.monto_inicial).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Monto Final (Declarado)</small>
+                        <strong>
+                          ${Number(ses.monto_final).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Fecha Cierre</small>
+                        <strong>
+                          {new Date(ses.fecha_cierre).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Total Sistema</small>
+                        <strong>--</strong> {/* Necesita cálculo de ventas */}
+                      </div>
+                    </div>
+                    <div className="detail-footer">
+                      <button className="btn-print">
+                        <Printer size={16} /> Imprimir Z
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

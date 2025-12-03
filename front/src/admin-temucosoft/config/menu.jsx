@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Building2, CreditCard, Users, FileText
+  LayoutDashboard, Building2, CreditCard, Users, Layers
 } from "lucide-react";
 
 // Definimos el rol único para este panel
@@ -22,6 +22,12 @@ export const menuTemucoSoft = [
     title: "Suscripciones", 
     icon: <CreditCard size={20} />, 
     path: "subscriptions",
+    allowedRoles: [ROLE_SUPER] // <--- AGREGAR ESTO
+  },
+  { 
+    title: "Planes", 
+    icon: <Layers size={20} />, 
+    path: "planes",
     allowedRoles: [ROLE_SUPER] // <--- AGREGAR ESTO
   },
   { 

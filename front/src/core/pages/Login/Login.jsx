@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+// src/core/pages/Login/Login.jsx
+
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+// CORRECCIÓN: Ruta relativa correcta (Subir 3 niveles: Login -> Pages -> Core -> Src -> Admin-cliente)
+import { AuthContext } from "../../../admin-cliente/config/AuthContext"; 
 import "./Login.css";
 import logo from "/src/assets/Logo_h.png";
 import {
@@ -7,64 +11,55 @@ import {
   Lock,
   Eye,
   EyeOff,
-  ArrowRight,
   Loader2,
   ShieldCheck,
   Key,
 } from "lucide-react";
-import BlueBanner from "./BlueBanner"; // Importamos el componente del banner azul
+import BlueBanner from "./BlueBanner";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [authMode, setAuthMode] = useState("jwt"); // Estado para el tipo de auth
+  const [error, setError] = useState("");
+  const [authMode, setAuthMode] = useState("jwt");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const result = await login(email, password);
 
-      // Lógica de autenticación simulada
-      if (authMode === "jwt") {
-        console.log("--- MODO JWT SELECCIONADO ---");
-        console.log("Simulando petición a /api/token/");
-        console.log("Token recibido: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
-        localStorage.setItem(
-          "token",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        );
-        localStorage.setItem(
-          "user_role",
-          email.includes("admin") ? "admin_cliente" : "vendedor"
-        );
-        alert("Login exitoso vía JWT. Token guardado en localStorage.");
+      if (result.success) {
+        console.log(`✅ Login exitoso vía ${authMode.toUpperCase()}`);
+
+        // Redirección según tipo de usuario
+        if (email.includes("temucosoft") || email.includes("superadmin")) {
+          navigate("/ts/dashboard");
+        } else {
+          navigate("/cliente/dashboard");
+        }
       } else {
-        console.log("--- MODO SESIÓN SELECCIONADO ---");
-        console.log("Simulando petición a /api/login/ (session)");
-        console.log("Cookie de sesión establecida por el servidor.");
-        // document.cookie = "sessionid=xyz123; path=/; HttpOnly"; // Esto lo haría el backend
-        alert("Login exitoso vía Sesión. Cookie de sesión establecida.");
+        setError(result.error || "Error de autenticación");
       }
-
-      // Redirección según rol (Simulación)
-      if (email.includes("admin")) navigate("/cliente/dashboard");
-      else if (email.includes("temucosoft")) navigate("/ts/dashboard");
-      else navigate("/cliente/dashboard");
-    }, 1500);
+    } catch (err) {
+      console.error("Error en login:", err);
+      setError("Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="login-container">
-      {/* --- PANEL IZQUIERDO (Diseño Azul Original) --- */}
       <BlueBanner />
-      {/* -------------------------------------------- */}
 
-      {/* PANEL DERECHO (Formulario con Selector) */}
       <div className="login-form-wrapper">
         <div className="login-box">
           <div className="login-header">
@@ -73,8 +68,24 @@ const Login = () => {
             <p>Ingresa tus credenciales</p>
           </div>
 
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#fee",
+                border: "1px solid #fcc",
+                color: "#c33",
+                padding: "12px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                fontSize: "14px",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin}>
-            {/* --- SELECTOR DE MODO DE LOGIN (NUEVO) --- */}
+            {/* Selector de modo */}
             <div className="auth-mode-selector">
               <button
                 type="button"
@@ -93,7 +104,6 @@ const Login = () => {
                 <ShieldCheck size={16} /> Sesión
               </button>
             </div>
-            {/* ----------------------------------------- */}
 
             <div className="input-group">
               <label>Correo Electrónico</label>
@@ -138,6 +148,22 @@ const Login = () => {
               )}
             </button>
           </form>
+
+          {/* Info de prueba */}
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "12px",
+              backgroundColor: "#f0f9ff",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: "#0369a1",
+            }}
+          >
+            <strong>💡 Prueba con:</strong>
+            <br />
+            admin@empresa.com / vendedor@empresa.com
+          </div>
         </div>
       </div>
     </div>

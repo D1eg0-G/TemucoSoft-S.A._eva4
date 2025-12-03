@@ -1,105 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../config/api"; // Conexión real
 import "./Purchases.css";
-import "/src//App.css";
+import "/src/App.css";
 import {
   Search,
   Plus,
   ChevronDown,
   ChevronUp,
   FileText,
-  Truck,
   DollarSign,
-  PackageCheck,
   X,
   Save,
+  Loader2,
 } from "lucide-react";
 
 const Purchases = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  const toggleRow = (id) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
-  };
+  // DATOS
+  const [purchases, setPurchases] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const purchases = [
-    {
-      id: "COM-2024-88",
-      date: "24 Nov 2025",
-      provider: "TecnoGlobal Mayorista",
-      total: "$1.540.000",
-      status: "Recibido",
-      items: [
-        {
-          sku: "382934",
-          name: "Router WiFi 6",
-          cost: "$45.000",
-          qty: 20,
-          total: "$900.000",
-        },
-      ],
-      invoice: "FAC-99012",
-    },
-    {
-      id: "COM-2024-89",
-      date: "25 Nov 2025",
-      provider: "Importadora del Sur",
-      total: "$320.000",
-      status: "Pendiente",
-      items: [
-        {
-          sku: "HT339",
-          name: "Mouse Ergonomico",
-          cost: "$8.000",
-          qty: 40,
-          total: "$320.000",
-        },
-      ],
-      invoice: "PENDIENTE",
-    },
-  ];
+  // FORMULARIO (Simplificado para el ejemplo)
+  const [newPurchase, setNewPurchase] = useState({
+    proveedor: "", // ID Proveedor
+    total: 0,
+    items: [],
+  });
 
-  const getStatusClass = (status) => {
-    if (status === "Pendiente") return "status-orange";
-    if (status === "Recibido") return "status-green";
-    return "status-gray";
-  };
+  const toggleRow = (id) => setExpandedRowId(expandedRowId === id ? null : id);
 
-  const handleSave = (e) => {
+  // 1. CARGAR DATOS
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [resPurchases, resProviders] = await Promise.all([
+          api.get("/compras/"),
+          api.get("/proveedores/"),
+        ]);
+        setPurchases(resPurchases.data);
+        setProviders(resProviders.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert("Compra registrada");
+    alert(
+      "Para crear una compra real, necesitas agregar lógica de items en el frontend. (Pendiente)"
+    );
     setShowModal(false);
   };
 
+  const getStatusClass = (status) => {
+    if (status === "pendiente") return "status-orange";
+    if (status === "recibido") return "status-green";
+    return "status-gray";
+  };
+
+  if (loading)
+    return (
+      <div
+        className="loader-container"
+        style={{ display: "flex", justifyContent: "center", padding: "50px" }}
+      >
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
+
   return (
     <div className="purchases-container">
-      {/* KPIs */}
+      {/* KPI */}
       <div className="stats-overview-grid">
         <div className="stat-card blue">
           <div className="stat-icon">
             <DollarSign size={24} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Gastos del Mes</span>
-            <h3 className="stat-value">$2.7M</h3>
-          </div>
-        </div>
-        <div className="stat-card orange">
-          <div className="stat-icon">
-            <Truck size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">En Tránsito</span>
-            <h3 className="stat-value">1 Orden</h3>
-          </div>
-        </div>
-        <div className="stat-card green">
-          <div className="stat-icon">
-            <PackageCheck size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Recepcionados</span>
-            <h3 className="stat-value">15</h3>
+            <span className="stat-label">Gastos Históricos</span>
+            <h3 className="stat-value">
+              ${purchases.reduce((acc, p) => acc + p.total, 0).toLocaleString()}
+            </h3>
           </div>
         </div>
       </div>
@@ -107,14 +96,9 @@ const Purchases = () => {
       <div className="filters-toolbar">
         <div className="search-box-purchases">
           <Search size={18} />
-          <input type="text" placeholder="Buscar por proveedor, factura..." />
+          <input type="text" placeholder="Buscar compra..." />
         </div>
         <div className="tools-right">
-          <div className="filter-dropdowns">
-            <button className="filter-btn">
-              Estado: Todos <ChevronDown size={14} />
-            </button>
-          </div>
           <button
             className="btn-primary-add"
             onClick={() => setShowModal(true)}
@@ -125,17 +109,21 @@ const Purchases = () => {
       </div>
 
       <div className="purchases-list-body">
-        {/* Header Tabla */}
         <div className="purchases-table-header">
-          <div className="col-id">ID Compra</div>
+          <div className="col-id">ID</div>
           <div className="col-date">Fecha</div>
           <div className="col-prov">Proveedor</div>
-          <div className="col-inv">Factura Ref.</div>
-          <div className="col-total">Monto Total</div>
+          <div className="col-total">Total</div>
           <div className="col-status">Estado</div>
           <div className="col-action"></div>
         </div>
-        {/* Lista */}
+
+        {purchases.length === 0 && (
+          <p style={{ padding: "20px", textAlign: "center" }}>
+            No hay compras registradas.
+          </p>
+        )}
+
         {purchases.map((purchase) => (
           <div
             key={purchase.id}
@@ -148,21 +136,20 @@ const Purchases = () => {
               onClick={() => toggleRow(purchase.id)}
             >
               <div className="col-id">
-                <strong>{purchase.id}</strong>
+                <strong>#{purchase.id}</strong>
               </div>
-              <div className="col-date">{purchase.date}</div>
-              <div className="col-prov">{purchase.provider}</div>
-              <div className="col-inv">
-                <span className="invoice-tag">{purchase.invoice}</span>
+              <div className="col-date">
+                {new Date(purchase.fecha).toLocaleDateString()}
               </div>
+              <div className="col-prov">{purchase.proveedor_nombre}</div>
               <div className="col-total">
-                <strong>{purchase.total}</strong>
+                <strong>${purchase.total.toLocaleString()}</strong>
               </div>
               <div className="col-status">
                 <span
-                  className={`status-pill ${getStatusClass(purchase.status)}`}
+                  className={`status-pill ${getStatusClass(purchase.estado)}`}
                 >
-                  {purchase.status}
+                  {purchase.estado}
                 </span>
               </div>
               <div className="col-action">
@@ -175,35 +162,23 @@ const Purchases = () => {
                 </button>
               </div>
             </div>
+            {/* Detalles (Items) */}
             {expandedRowId === purchase.id && (
               <div className="purchase-details-panel">
                 <div className="details-card">
                   <div className="details-header-row">
-                    <span className="d-sku">SKU</span>
                     <span className="d-prod">Producto</span>
-                    <span className="d-cost">Costo Unit.</span>
                     <span className="d-qty">Cant.</span>
-                    <span className="d-total">Subtotal</span>
+                    <span className="d-cost">Costo U.</span>
                   </div>
-                  {purchase.items.map((item, idx) => (
-                    <div key={idx} className="d-item-row">
-                      <span className="d-sku">{item.sku}</span>
-                      <span className="d-prod">{item.name}</span>
-                      <span className="d-cost">{item.cost}</span>
-                      <span className="d-qty">{item.qty}</span>
-                      <span className="d-total">{item.total}</span>
-                    </div>
-                  ))}
-                  <div className="details-footer-actions">
-                    <button className="btn-secondary-action">
-                      <FileText size={16} /> Ver Factura PDF
-                    </button>
-                    {purchase.status === "Pendiente" && (
-                      <button className="btn-action-receive">
-                        Confirmar Recepción
-                      </button>
-                    )}
-                  </div>
+                  {purchase.items &&
+                    purchase.items.map((item, idx) => (
+                      <div key={idx} className="d-item-row">
+                        <span className="d-prod">{item.producto_nombre}</span>
+                        <span className="d-qty">{item.cantidad}</span>
+                        <span className="d-cost">${item.costo_unitario}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
@@ -211,12 +186,12 @@ const Purchases = () => {
         ))}
       </div>
 
-      {/* --- MODAL REGISTRAR COMPRA --- */}
+      {/* --- MODAL --- */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Registrar Compra Proveedor</h3>
+              <h3>Registrar Compra</h3>
               <button
                 className="btn-close-modal"
                 onClick={() => setShowModal(false)}
@@ -226,48 +201,27 @@ const Purchases = () => {
             </div>
             <form className="form-layout" onSubmit={handleSave}>
               <div className="form-group">
-                <label>Proveedor *</label>
-                <select>
-                  <option>TecnoGlobal S.A.</option>
-                  <option>Importadora del Sur</option>
+                <label>Proveedor</label>
+                <select
+                  onChange={(e) =>
+                    setNewPurchase({
+                      ...newPurchase,
+                      proveedor: e.target.value,
+                    })
+                  }
+                >
+                  <option>Seleccionar...</option>
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}
+                    </option>
+                  ))}
                 </select>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>N° Factura / Boleta</label>
-                  <input type="text" placeholder="FAC-0001" required />
-                </div>
-                <div className="form-group">
-                  <label>Fecha Emisión</label>
-                  <input type="date" required />
-                </div>
-              </div>
-
-              <hr style={{ borderColor: "#e2e8f0", margin: "0" }} />
-              <small style={{ color: "#64748b" }}>
-                Detalle rápido (Monto global para registrar deuda)
-              </small>
-
-              <div className="form-group">
-                <label>Monto Total Neto</label>
-                <input type="number" placeholder="$ 0" required min="0" />
-              </div>
-
-              <div className="form-group">
-                <label>Archivo Adjunto (PDF/XML)</label>
-                <input type="file" />
               </div>
 
               <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancelar
-                </button>
                 <button type="submit" className="btn-solid">
-                  <Save size={18} /> Guardar Compra
+                  <Save size={18} /> Guardar
                 </button>
               </div>
             </form>
