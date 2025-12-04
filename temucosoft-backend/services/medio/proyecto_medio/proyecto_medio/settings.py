@@ -105,8 +105,12 @@ WSGI_APPLICATION = 'proyecto_medio.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+	    'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'medio-db',
+        'USER': 'medio',
+        'PASSWORD': 'medio123',
+        'HOST': '3.234.92.10',  # o la IP del servidor de la BD
+        'PORT': '5432',       # puerto por defecto de PostgreSQL
     }
 }
 
