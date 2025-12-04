@@ -10,6 +10,7 @@ class Usuario(AbstractUser):
     ROLES = (
         ('admin_cliente', 'Administrador Cliente'),
         ('vendedor', 'Vendedor'),
+        ('gerente', 'Gerente'),  # Disponible en planes superiores
     )
     role = models.CharField(max_length=20, choices=ROLES, default='vendedor')
     
@@ -35,6 +36,17 @@ class Sucursal(models.Model):
     def __str__(self):
         return self.nombre
 
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    empresa_id = models.IntegerField()
+
+    class Meta:
+        unique_together = ('nombre', 'empresa_id')
+
+    def __str__(self):
+        return self.nombre
+
 class Producto(models.Model):
     sku = models.CharField(max_length=50)
     nombre = models.CharField(max_length=150)
@@ -43,7 +55,7 @@ class Producto(models.Model):
     precio = models.IntegerField(validators=[validar_precio_positivo])
     costo = models.IntegerField(validators=[validar_precio_positivo])
     
-    categoria = models.CharField(max_length=100)
+    categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     empresa_id = models.IntegerField()
 
     class Meta:
@@ -70,6 +82,23 @@ class Caja(models.Model):
     fecha_apertura = models.DateTimeField(auto_now_add=True)
     fecha_cierre = models.DateTimeField(null=True, blank=True)
     empresa_id = models.IntegerField()
+
+class MovimientoCaja(models.Model):
+    TIPOS_MOVIMIENTO = (
+        ('retiro', 'Retiro'),
+        ('gasto', 'Gasto'),
+        ('entrada', 'Entrada'),
+    )
+    
+    caja = models.ForeignKey(Caja, on_delete=models.CASCADE, related_name='movimientos')
+    tipo = models.CharField(max_length=20, choices=TIPOS_MOVIMIENTO)
+    monto = models.IntegerField(validators=[validar_precio_positivo])
+    concepto = models.CharField(max_length=200)
+    fecha = models.DateTimeField(auto_now_add=True)
+    empresa_id = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.tipo} - ${self.monto} - {self.concepto}"
 
 # =========================================================
 # VENTAS (POS)

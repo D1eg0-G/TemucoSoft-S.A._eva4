@@ -1,10 +1,22 @@
 from rest_framework import serializers
 from django.db import transaction
 from .models import (
-    Producto, Venta, VentaItem, Sucursal, Usuario, Inventario, Caja,
+    Categoria, Producto, Venta, VentaItem, Sucursal, Usuario, Inventario, Caja, MovimientoCaja,
     Proveedor, Compra, CompraItem, PedidoInterno, MovimientoInventario
     
 )
+
+# --- CATEGORÍAS ---
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = '__all__'
+
+# --- CAJA Y MOVIMIENTOS ---
+class MovimientoCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovimientoCaja
+        fields = '__all__'
 
 # --- USUARIOS Y SUCURSALES ---
 class UsuarioSerializer(serializers.ModelSerializer):

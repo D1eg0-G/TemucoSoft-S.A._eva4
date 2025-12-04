@@ -7,17 +7,17 @@ import ClienteLayout from "./Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Importación de Páginas
-import DashboardCliente from "./pages/Dashboard/Dashboard";
-import Products from "./pages/Products/Products";
-import Branches from "./pages/Branches/Branches";
-import Gestionuser from "./pages/Gestion-user/Users";
-import Orders from "./pages/Orders/Orders";
-import Reports from "./pages/Reports/Reports";
-import Inventory from "./pages/Inventory/Inventory";
-import Sale from "./pages/Sale/SalesPOS";
-import Subcription from "./pages/Subcription/Subscription";
-import Purchases from "./pages/Purchases/Purchases";
-import Providers from "./pages/Providers/Providers";
+import DashboardCliente from "./Pages/Dashboard/Dashboard";
+import Products from "./Pages/Products/Products";
+import Branches from "./Pages/Branches/Branches";
+import Gestionuser from "./Pages/Gestion-user/Users";
+import Orders from "./Pages/Orders/Orders";
+import Reports from "./Pages/Reports/Reports";
+import Inventory from "./Pages/Inventory/Inventory";
+import Sale from "./Pages/Sale/SalesPOS";
+import Subcription from "./Pages/Subcription/Subscription";
+import Purchases from "./Pages/Purchases/Purchases";
+import Providers from "./Pages/Providers/Providers";
 import CashRegister from "./Pages/CashRegister/CashRegister";
 
 export default function ClienteRouter() {

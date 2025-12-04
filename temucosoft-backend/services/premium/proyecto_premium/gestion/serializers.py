@@ -2,12 +2,30 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import (
     # Básico
-    Producto, Venta, VentaItem, Sucursal, Usuario, Inventario, Caja,
+    Categoria, Producto, Venta, VentaItem, Sucursal, Usuario, Inventario, Caja, MovimientoCaja,
     # Medio
     Proveedor, Compra, CompraItem, PedidoInterno, MovimientoInventario,
     # Premium
     ClienteFinal, OrdenEcommerce, OrdenItem, Carrito, CarritoItem, ApiToken, LogApi
 )
+
+# =========================================================
+# 1. BLOQUE CATEGORÍAS
+# =========================================================
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = '__all__'
+
+# =========================================================
+# 1. BLOQUE CAJA Y MOVIMIENTOS
+# =========================================================
+
+class MovimientoCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovimientoCaja
+        fields = '__all__'
 
 # =========================================================
 # 1. BLOQUE BÁSICO (Usuarios, Sucursales, Inventario)

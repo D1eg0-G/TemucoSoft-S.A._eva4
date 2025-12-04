@@ -25,6 +25,10 @@ const Subscription = () => {
     loadInfo();
   }, []);
 
+  const handleContactSupport = () => {
+    window.location.href = "mailto:soporte@temucosoft.cl?subject=Soporte Plan";
+  };
+
   if (loading) return <Loader2 className="animate-spin" />;
 
   return (
@@ -58,7 +62,7 @@ const Subscription = () => {
                 </div>
               </div>
               <div className="plan-actions">
-                <button className="btn-upgrade">
+                <button className="btn-upgrade" onClick={handleContactSupport}>
                   <Zap size={16} /> Contactar Soporte
                 </button>
               </div>

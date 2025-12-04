@@ -65,7 +65,7 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  overflow: hidden; /* Para redondear esquinas */
+  overflow: visible; /* Permitir que el menú desplegable sea visible */
 }
 
 /* Header de Tabla */
@@ -80,6 +80,7 @@
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border-radius: 12px 12px 0 0; /* Redondear esquinas superiores */
 }
 
 /* Cuerpo de la Tabla */
@@ -98,6 +99,7 @@
 
 .plans-row:last-child {
   border-bottom: none;
+  border-radius: 0 0 12px 12px; /* Redondear esquinas inferiores */
 }
 
 .plans-row:hover {

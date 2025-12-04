@@ -97,6 +97,7 @@ export const AuthProvider = ({ children }) => {
 
       const {
         empresa_id,
+        empresa_nombre,
         plan: planTipo,
         instance_url,
         modulos,
@@ -122,7 +123,12 @@ export const AuthProvider = ({ children }) => {
       const { access, refresh } = tokenRes.data;
 
       // 3. DATOS DE USUARIO (/me)
-      let userData = { email, role: "usuario_generico", empresa_id };
+      let userData = {
+        email,
+        role: "usuario_generico",
+        empresa_id,
+        empresa_nombre,
+      };
 
       // Intentamos obtener datos ricos del usuario, pero si falla (ej: super admin en master), no bloqueamos.
       try {
@@ -137,8 +143,8 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${access}` },
         });
 
-        // Mezclamos datos
-        userData = { ...userRes.data, empresa_id };
+        // Mezclamos datos preservando empresa_nombre que viene del router
+        userData = { ...userRes.data, empresa_id, empresa_nombre };
       } catch (e) {
         console.warn(
           "No se pudo cargar /me (posiblemente Super Admin). Usando datos locales."
@@ -148,6 +154,9 @@ export const AuthProvider = ({ children }) => {
           userData.role = "super-admin";
           userData.first_name = "Super";
           userData.last_name = "Admin";
+        } else {
+          // Para clientes, establecer role como admin_cliente
+          userData.role = "admin_cliente";
         }
       }
 
@@ -155,11 +164,15 @@ export const AuthProvider = ({ children }) => {
       const planData = {
         tipo: planTipo,
         modulos,
-        // Si es super admin, creamos config al vuelo. Si es cliente, leemos de PLAN_CONFIG
+        // Si es super admin, creamos config al vuelo. Si es cliente, usamos instance_url del backend
         config:
           planTipo === "super-admin"
             ? { name: "Super Admin", apiUrl: instance_url }
-            : PLAN_CONFIG[planTipo],
+            : {
+                name: PLAN_CONFIG[planTipo]?.name || planTipo,
+                apiUrl: instance_url, // Usar instance_url del backend
+                modules: PLAN_CONFIG[planTipo]?.modules || modulos,
+              },
       };
 
       setUser(userData);

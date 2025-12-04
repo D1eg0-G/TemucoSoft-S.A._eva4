@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import api from "../../config/api"; // Conexión real
+import { useNavigate } from "react-router-dom"; // Hook para navegación
+import api from "../../config/api"; 
 import "./Branches.css";
 import "/src/App.css";
 import {
@@ -7,7 +8,6 @@ import {
   Plus,
   MapPin,
   Phone,
-  Mail,
   MoreVertical,
   Building2,
   Users,
@@ -16,24 +16,25 @@ import {
   X,
   Loader2,
   Save,
+  Trash2,
 } from "lucide-react";
 
 const Branches = () => {
+  const navigate = useNavigate(); // Instancia de navegación
   const [showModal, setShowModal] = useState(false);
-
-  // ESTADOS DE DATOS (Conectados)
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
-  // Estado del Formulario
   const [formData, setFormData] = useState({
     nombre: "",
     direccion: "",
     telefono: "",
-    // codigo: "", // Si agregas este campo en tu modelo Django
   });
 
-  // 1. CARGAR DATOS
   const fetchBranches = async () => {
     try {
       setLoading(true);
@@ -50,18 +51,27 @@ const Branches = () => {
     fetchBranches();
   }, []);
 
-  // 2. GUARDAR DATOS
   const handleSaveBranch = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/sucursales/", {
-        ...formData,
-        empresa_id: 1, // El backend debería tomarlo del token, se envía por si acaso
-      });
-      alert("Sucursal creada exitosamente");
+      if (isEditMode) {
+        await api.put(`/sucursales/${editingId}/`, {
+          ...formData,
+          empresa_id: 1,
+        });
+        alert("Sucursal actualizada exitosamente");
+      } else {
+        await api.post("/sucursales/", {
+          ...formData,
+          empresa_id: 1,
+        });
+        alert("Sucursal creada exitosamente");
+      }
       setShowModal(false);
-      setFormData({ nombre: "", direccion: "", telefono: "" }); // Limpiar
-      fetchBranches(); // Recargar lista
+      setFormData({ nombre: "", direccion: "", telefono: "" });
+      setIsEditMode(false);
+      setEditingId(null);
+      fetchBranches();
     } catch (err) {
       alert(
         "Error al guardar: " +
@@ -70,9 +80,50 @@ const Branches = () => {
     }
   };
 
+  const handleEdit = (branch) => {
+    setFormData({
+      nombre: branch.nombre,
+      direccion: branch.direccion,
+      telefono: branch.telefono,
+    });
+    setEditingId(branch.id);
+    setIsEditMode(true);
+    setShowModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Está seguro de eliminar esta sucursal?")) return;
+    try {
+      await api.delete(`/sucursales/${id}/`);
+      alert("Sucursal eliminada");
+      fetchBranches();
+    } catch (err) {
+      alert("Error al eliminar: " + (err.response?.data?.detail || "Error"));
+    }
+    setOpenMenuId(null);
+  };
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const handleOpenCreate = () => {
+    setFormData({ nombre: "", direccion: "", telefono: "" });
+    setIsEditMode(false);
+    setEditingId(null);
+    setShowModal(true);
+  };
+
+  // Función para navegar al inventario
+  const handleViewInventory = (branchId) => {
+    // Redirige a la página de inventario
+    navigate("/app/inventory");
+  };
+
+  const filteredBranches = branches.filter((branch) =>
+    branch.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -96,35 +147,57 @@ const Branches = () => {
         <div className="header-actions">
           <div className="search-box-branch">
             <Search size={18} />
-            <input type="text" placeholder="Buscar sucursal..." />
+            <input
+              type="text"
+              placeholder="Buscar sucursal..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <button className="btn-add-branch" onClick={() => setShowModal(true)}>
+          <button className="btn-add-branch" onClick={handleOpenCreate}>
             <Plus size={18} /> Nueva Sucursal
           </button>
         </div>
       </div>
 
       <div className="branches-grid">
-        {branches.length === 0 && (
+        {filteredBranches.length === 0 && (
           <p style={{ color: "#666", padding: "20px" }}>
             No hay sucursales registradas.
           </p>
         )}
 
-        {branches.map((branch) => (
-          <div
-            key={branch.id}
-            className="branch-card" // Mantenemos tu clase original
-          >
+        {filteredBranches.map((branch) => (
+          <div key={branch.id} className="branch-card">
             <div className="branch-top">
               <div className="icon-wrapper">
                 <Building2 size={24} />
               </div>
               <div className="branch-menu">
                 <span className="status-badge active">Operativa</span>
-                <button className="btn-dots-card">
+                <button
+                  className="btn-dots-card"
+                  onClick={() =>
+                    setOpenMenuId(openMenuId === branch.id ? null : branch.id)
+                  }
+                >
                   <MoreVertical size={18} />
                 </button>
+                {openMenuId === branch.id && (
+                  <div
+                    className="action-dropdown"
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "100%",
+                      zIndex: 10,
+                    }}
+                  >
+                    <button onClick={() => handleDelete(branch.id)}>
+                      <Trash2 size={16} /> Eliminar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="branch-info">
@@ -158,10 +231,17 @@ const Branches = () => {
               </div>
             </div>
             <div className="branch-actions">
-              <button className="action-btn-card edit">
+              <button
+                className="action-btn-card edit"
+                onClick={() => handleEdit(branch)}
+              >
                 <Edit size={16} /> Editar
               </button>
-              <button className="action-btn-card inventory">
+              {/* Botón funcional de Ver Inventario */}
+              <button 
+                className="action-btn-card inventory"
+                onClick={() => handleViewInventory(branch.id)}
+              >
                 Ver Inventario
               </button>
             </div>
@@ -169,15 +249,18 @@ const Branches = () => {
         ))}
       </div>
 
-      {/* --- MODAL SUCURSAL --- */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Añadir Sucursal</h3>
+              <h3>{isEditMode ? "Editar Sucursal" : "Añadir Sucursal"}</h3>
               <button
                 className="btn-close-modal"
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setIsEditMode(false);
+                  setEditingId(null);
+                }}
               >
                 <X size={20} />
               </button>
@@ -216,19 +299,22 @@ const Branches = () => {
                     placeholder="+56 9..."
                   />
                 </div>
-                {/* Agrega más campos si tu modelo los tiene */}
               </div>
 
               <div className="modal-footer">
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setIsEditMode(false);
+                    setEditingId(null);
+                  }}
                 >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-solid">
-                  <Save size={18} /> Guardar
+                  <Save size={18} /> {isEditMode ? "Actualizar" : "Guardar"}
                 </button>
               </div>
             </form>

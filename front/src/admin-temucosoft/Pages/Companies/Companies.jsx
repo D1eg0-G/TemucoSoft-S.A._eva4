@@ -1,47 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../../../admin-cliente/config/api";
 import "./Companies.css";
 import "/src/App.css";
 import {
   Search,
   Plus,
-  ChevronDown,
-  ChevronUp,
-  Building2,
-  Mail,
-  Phone,
-  Calendar,
-  Power,
   Edit,
-  Users,
-  Layers,
-  CreditCard,
+  Trash2,
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
   X,
   Save,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const Companies = () => {
-  const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  // DATOS REALES
+  // Datos
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Estado del formulario - ✅ CORREGIDO: email en lugar de email_contacto
-  const [formData, setFormData] = useState({
+  // Estado para manejar la expansión de filas (Acordeón)
+  const [expandedId, setExpandedId] = useState(null);
+
+  // ELIMINADO: sitio_web ya no está en el estado inicial
+  const initialForm = {
     nombre: "",
     rut: "",
-    email: "", // ✅ CAMBIO: Ahora coincide con el modelo Django
+    direccion: "",
     telefono: "",
-    direccion: "", // ✅ AGREGADO: Campo del modelo
-    // Campos técnicos para la conexión (Opcionales)
-    db_name: "",
-    db_user: "",
-    db_password: "",
-    db_host: "",
-  });
+    email: "",
+    is_active: true,
+  };
+  const [formData, setFormData] = useState(initialForm);
 
   // 1. CARGAR EMPRESAS
   const fetchCompanies = async () => {
@@ -50,7 +49,7 @@ const Companies = () => {
       const res = await api.get("/empresas/");
       setCompanies(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando empresas:", err);
     } finally {
       setLoading(false);
     }
@@ -60,55 +59,100 @@ const Companies = () => {
     fetchCompanies();
   }, []);
 
-  const toggleRow = (id) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
+  // 2. GUARDAR (CREAR / EDITAR)
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      // Importante: Asegúrate de que tu Serializer en Django espere "email"
+      // o cambia aquí el nombre a "email" si tu API lo rechaza.
+      if (isEditMode) {
+        await api.put(`/empresas/${editingId}/`, formData);
+        alert("Empresa actualizada exitosamente");
+      } else {
+        await api.post("/empresas/", formData);
+        alert("Empresa creada exitosamente");
+      }
+      setShowModal(false);
+      setFormData(initialForm);
+      fetchCompanies();
+    } catch (err) {
+      console.error("Error completo:", err.response);
+      let mensajeError = "Error al guardar.";
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        // Si el error es un objeto, intentamos leer el primer campo
+        if (typeof data === "object") {
+          const primerError = Object.keys(data)[0];
+          const detalle = data[primerError];
+          mensajeError = `Error en ${primerError}: ${detalle}`;
+        }
+      }
+      alert(mensajeError);
+    }
   };
 
-  const getPlanClass = (plan) => {
-    if (!plan) return "badge-gray";
-    const pName = plan.nombre?.toLowerCase() || "";
-    if (pName.includes("premium")) return "badge-purple";
-    if (pName.includes("estándar") || pName.includes("estandar"))
-      return "badge-blue";
-    return "badge-gray";
+  // 3. ELIMINAR
+  const handleDelete = async (id) => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de eliminar esta empresa? Se perderán sus datos asociados."
+      )
+    )
+      return;
+    try {
+      await api.delete(`/empresas/${id}/`);
+      alert("Empresa eliminada");
+      fetchCompanies();
+    } catch (err) {
+      alert("Error al eliminar");
+    }
+  };
+
+  // --- UI HANDLERS ---
+  const handleOpenCreate = () => {
+    setFormData(initialForm);
+    setIsEditMode(false);
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (company) => {
+    // ELIMINADO: sitio_web eliminado de la carga de datos
+    setFormData({
+      nombre: company.nombre,
+      rut: company.rut,
+      direccion: company.direccion || "",
+      telefono: company.telefono || "",
+      email: company.email || company.email || "", // Intenta leer ambos por si acaso
+      is_active: company.activo !== undefined ? company.activo : true, // Tu modelo dice 'activo', ajusté esto por seguridad
+    });
+    setEditingId(company.id);
+    setIsEditMode(true);
+    setShowModal(true);
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
-  // 2. GUARDAR EMPRESA
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/empresas/", formData);
-      alert("Empresa creada exitosamente");
-      setShowModal(false);
-      fetchCompanies();
-      // Reset form
-      setFormData({
-        nombre: "",
-        rut: "",
-        email: "",
-        telefono: "",
-        direccion: "",
-        db_name: "",
-        db_user: "",
-        db_password: "",
-        db_host: "",
-      });
-    } catch (err) {
-      console.error("Error completo:", err.response?.data);
-      alert("Error al crear empresa: " + JSON.stringify(err.response?.data));
-    }
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
   };
+
+  const filteredCompanies = companies.filter(
+    (c) =>
+      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.rut.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading)
     return (
       <div
         className="loader-container"
-        style={{ display: "flex", justifyContent: "center", padding: "50px" }}
+        style={{ padding: "50px", textAlign: "center" }}
       >
         <Loader2 className="animate-spin" size={48} color="#0e3c66" />
       </div>
@@ -116,289 +160,428 @@ const Companies = () => {
 
   return (
     <div className="companies-container">
+      {/* HEADER */}
       <div className="comp-header">
         <div>
-          <h2 className="page-title">Empresas Clientes</h2>
-          <p className="page-subtitle">Gestión total de suscriptores SaaS</p>
+          <h2 className="page-title">Gestión de Empresas</h2>
+          <p className="page-subtitle">
+            Administra las organizaciones clientes del sistema
+          </p>
         </div>
-        <div className="header-actions">
-          <button
-            className="btn-primary-comp"
-            onClick={() => setShowModal(true)}
-          >
-            <Plus size={18} /> Nueva Empresa
-          </button>
-        </div>
+        <button className="btn-primary-comp" onClick={handleOpenCreate}>
+          <Plus size={18} /> Nueva Empresa
+        </button>
       </div>
 
+      {/* TOOLBAR */}
       <div className="comp-toolbar">
         <div className="search-box-comp">
-          <Search size={18} />
+          <Search size={18} color="#94a3b8" />
           <input
             type="text"
-            placeholder="Buscar por nombre, RUT o contacto..."
+            placeholder="Buscar por nombre o RUT..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="filters-group">
-          <button className="filter-btn">
-            Plan: Todos <ChevronDown size={14} />
-          </button>
         </div>
       </div>
 
+      {/* LIST BODY */}
       <div className="comp-list-body">
-        {companies.map((company) => (
-          <div
-            key={company.id}
-            className={`company-group ${
-              expandedRowId === company.id ? "expanded" : ""
-            }`}
-          >
+        {filteredCompanies.length === 0 && (
+          <p style={{ textAlign: "center", color: "#64748b", padding: "40px" }}>
+            No se encontraron empresas.
+          </p>
+        )}
+
+        {filteredCompanies.map((company) => {
+          const isExpanded = expandedId === company.id;
+
+          return (
             <div
-              className="company-main-row"
-              onClick={() => toggleRow(company.id)}
+              key={company.id}
+              className={`company-group ${isExpanded ? "expanded" : ""}`}
             >
-              <div className="col-icon">
+              {/* FILA PRINCIPAL */}
+              <div
+                className="company-main-row"
+                onClick={() => toggleExpand(company.id)}
+              >
+                {/* 1. Icono */}
                 <div className="c-avatar">
-                  <Building2 size={20} />
+                  <Building2 size={18} />
                 </div>
-              </div>
-              <div className="col-info">
-                <span className="c-name">{company.nombre}</span>
-                <span className="c-rut">{company.rut}</span>
-              </div>
-              <div className="col-plan">
-                <span
-                  className={`plan-badge ${getPlanClass(
-                    company.suscripcion?.plan
-                  )}`}
-                >
-                  {company.suscripcion?.plan?.nombre || "Sin Plan"}
-                </span>
-              </div>
-              <div className="col-contact-short">
-                <span className="c-contact-name">{company.email}</span>
-              </div>
-              <div className="col-status">
-                <span
-                  className={`status-dot ${company.activo ? "green" : "red"}`}
-                ></span>
-                {company.activo ? "Activo" : "Inactivo"}
-              </div>
-              <div className="col-action">
-                <button className="btn-expand">
-                  {expandedRowId === company.id ? (
+
+                {/* 2. Nombre y RUT */}
+                <div>
+                  <span className="c-name">{company.nombre}</span>
+                  <span className="c-rut">{company.rut}</span>
+                </div>
+
+                {/* 3. Teléfono */}
+                <div className="col-contact-short">
+                  {company.telefono ? (
+                    <span style={{ fontSize: "0.9rem", color: "#64748b" }}>
+                      {company.telefono}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                      -
+                    </span>
+                  )}
+                </div>
+
+                {/* 4. Email */}
+                <div>
+                  {/* Ajuste visual para mostrar email o email según venga de la API */}
+                  <span className="c-contact-name">
+                    {company.email || company.email}
+                  </span>
+                </div>
+
+                {/* 5. Estado (Tu modelo usa 'activo', el front usaba 'is_active', intentamos leer ambos) */}
+                <div>
+                  <span
+                    className={`status-dot ${
+                      company.activo || company.is_active ? "green" : "red"
+                    }`}
+                  ></span>
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      color:
+                        company.activo || company.is_active
+                          ? "#16a34a"
+                          : "#ef4444",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {company.activo || company.is_active
+                      ? "Activa"
+                      : "Inactiva"}
+                  </span>
+                </div>
+
+                {/* 6. Flecha */}
+                <div className="btn-expand">
+                  {isExpanded ? (
                     <ChevronUp size={20} />
                   ) : (
                     <ChevronDown size={20} />
                   )}
-                </button>
+                </div>
               </div>
-            </div>
 
-            {expandedRowId === company.id && (
-              <div className="company-details-panel">
-                <div className="detail-section top">
-                  <div className="ds-info">
-                    <div className="ds-item">
-                      <Mail size={16} /> {company.email}
-                    </div>
-                    <div className="ds-item">
-                      <Phone size={16} /> {company.telefono || "N/A"}
-                    </div>
-                    <div className="ds-item">
-                      <Calendar size={16} /> Reg:{" "}
-                      {new Date(company.fecha_registro).toLocaleDateString()}
+              {/* PANEL DE DETALLES */}
+              {isExpanded && (
+                <div className="company-details-panel">
+                  {/* Sección 1: Detalles adicionales */}
+                  <div className="detail-section">
+                    <h4>
+                      <MapPin size={16} /> Ubicación y Contacto
+                    </h4>
+                    <div className="ds-info">
+                      <div className="ds-item">
+                        <MapPin size={14} className="text-soft" />
+                        {company.direccion || "Sin dirección registrada"}
+                      </div>
+                      {/* ELIMINADO: Ya no mostramos sitio web aquí tampoco */}
+                      <div className="ds-item">
+                        <Phone size={14} className="text-soft" />
+                        {company.telefono || "Sin teléfono"}
+                      </div>
                     </div>
                   </div>
-                  <div className="ds-actions">
-                    <button className="btn-action-edit">
-                      <Edit size={16} /> Editar Datos
-                    </button>
+
+                  {/* Sección 2: Información técnica */}
+                  <div className="detail-section">
+                    <h4>
+                      <Mail size={16} /> Datos de Sistema
+                    </h4>
+                    <div className="ds-info">
+                      <div className="ds-item">
+                        <span style={{ fontWeight: 600 }}>Email:</span>{" "}
+                        {company.email || company.email}
+                      </div>
+                      <div className="ds-item">
+                        <span style={{ fontWeight: 600 }}>ID BD:</span>{" "}
+                        {company.id}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sección 3: Acciones */}
+                  <div className="detail-section ds-actions">
                     <button
-                      className={`btn-action-power ${
-                        company.activo ? "danger" : "success"
-                      }`}
+                      className="btn-action-edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(company);
+                      }}
                     >
-                      <Power size={16} />{" "}
-                      {company.activo ? "Desactivar" : "Reactivar"}
+                      <Edit size={16} /> Editar Empresa
+                    </button>
+
+                    <button
+                      className="btn-action-power danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(company.id);
+                      }}
+                    >
+                      <Trash2 size={16} /> Eliminar Empresa
                     </button>
                   </div>
                 </div>
-                <div className="detail-divider"></div>
-                <div className="detail-section resources">
-                  <h4>Uso de Recursos</h4>
-                  <div className="resources-grid">
-                    <div className="res-item">
-                      <div className="res-label">
-                        <Users size={16} /> Usuarios
-                      </div>
-                      <div className="res-bar-bg">
-                        <div
-                          className="res-bar-fill"
-                          style={{ width: "20%" }}
-                        ></div>
-                      </div>
-                      <span className="res-val">-- / --</span>
-                    </div>
-                    <div className="res-item">
-                      <div className="res-label">
-                        <Layers size={16} /> Sucursales
-                      </div>
-                      <div className="res-bar-bg">
-                        <div
-                          className="res-bar-fill"
-                          style={{ width: "40%" }}
-                        ></div>
-                      </div>
-                      <span className="res-val">-- / --</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="detail-section payments">
-                  <h4>
-                    <CreditCard size={16} /> Historial Pagos
-                  </h4>
-                  <table className="mini-table-pay">
-                    <thead>
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                        <th>Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {company.historial_pagos &&
-                        company.historial_pagos.map((p) => (
-                          <tr key={p.id}>
-                            <td>
-                              {new Date(p.fecha_pago).toLocaleDateString()}
-                            </td>
-                            <td>${p.monto}</td>
-                            <td>
-                              <span className="pay-status ok">{p.estado}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      {(!company.historial_pagos ||
-                        company.historial_pagos.length === 0) && (
-                        <tr>
-                          <td colSpan="3">Sin pagos registrados</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* --- MODAL NUEVA EMPRESA --- */}
+      {/* --- MODAL --- */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>Registrar Nueva Empresa Cliente</h3>
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 50,
+          }}
+        >
+          <div
+            className="modal-card"
+            style={{
+              background: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "500px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div
+              className="modal-header"
+              style={{
+                padding: "20px",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#0f172a" }}>
+                {isEditMode ? "Editar Empresa" : "Nueva Empresa"}
+              </h3>
               <button
-                className="btn-close-modal"
                 onClick={() => setShowModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 <X size={20} />
               </button>
             </div>
-            <form className="form-layout" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>
-                  Razón Social <span className="req">*</span>
+
+            <form onSubmit={handleSave} style={{ padding: "20px" }}>
+              <div style={{ marginBottom: "15px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Nombre Empresa *
                 </label>
                 <input
                   type="text"
                   name="nombre"
-                  required
-                  placeholder="Ej: Panadería El Trigo"
                   value={formData.nombre}
                   onChange={handleInputChange}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                  placeholder="Ej: Tech Solutions SpA"
                 />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    RUT Empresa <span className="req">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="rut"
-                    required
-                    placeholder="76.xxx.xxx-x"
-                    value={formData.rut}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    Email Contacto <span className="req">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="contacto@empresa.cl"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Teléfono</label>
-                  <input
-                    type="tel"
-                    name="telefono"
-                    placeholder="+56 9 xxxx xxxx"
-                    value={formData.telefono}
-                    onChange={handleInputChange}
-                  />
-                </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  RUT *
+                </label>
+                <input
+                  type="text"
+                  name="rut"
+                  value={formData.rut}
+                  onChange={handleInputChange}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                  placeholder="76.xxx.xxx-k"
+                />
               </div>
 
-              <div className="form-group">
-                <label>Dirección</label>
+              <div style={{ marginBottom: "15px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Email Contacto *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                />
+              </div>
+
+              {/* ELIMINADO: Grid que contenía teléfono y web. Ahora teléfono usa width 100% */}
+              <div style={{ marginBottom: "15px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Teléfono
+                </label>
+                <input
+                  type="text"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                />
+              </div>
+
+              {/* SITIO WEB FUE ELIMINADO COMPLETAMENTE */}
+
+              <div style={{ marginBottom: "15px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Dirección
+                </label>
                 <input
                   type="text"
                   name="direccion"
-                  placeholder="Calle, número, ciudad"
                   value={formData.direccion}
                   onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                  }}
                 />
               </div>
 
-              <hr />
-              <p style={{ fontSize: "12px", color: "#666" }}>
-                Configuración Técnica (Opcional si usa cloud)
-              </p>
-              <div className="form-group">
-                <label>DB Host</label>
-                <input
-                  type="text"
-                  name="db_host"
-                  value={formData.db_host}
-                  onChange={handleInputChange}
-                  placeholder="localhost"
-                />
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    checked={formData.is_active}
+                    onChange={handleInputChange}
+                  />
+                  Empresa Activa
+                </label>
               </div>
 
-              <div className="modal-footer">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                }}
+              >
                 <button
                   type="button"
-                  className="btn-ghost"
                   onClick={() => setShowModal(false)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: "white",
+                    cursor: "pointer",
+                  }}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn-solid">
-                  <Save size={18} /> Crear Empresa
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: "#0e3c66",
+                    color: "white",
+                    cursor: "pointer",
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Save size={16} />{" "}
+                  {isEditMode ? "Guardar Cambios" : "Crear Empresa"}
                 </button>
               </div>
             </form>

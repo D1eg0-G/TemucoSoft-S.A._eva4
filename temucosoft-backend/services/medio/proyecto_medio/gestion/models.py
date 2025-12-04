@@ -18,12 +18,23 @@ class Sucursal(models.Model):
     telefono = models.CharField(max_length=20, validators=[validar_telefono_chileno])
     empresa_id = models.IntegerField()
 
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    empresa_id = models.IntegerField()
+
+    class Meta:
+        unique_together = ('nombre', 'empresa_id')
+
+    def __str__(self):
+        return self.nombre
+
 class Producto(models.Model):
     sku = models.CharField(max_length=50)
     nombre = models.CharField(max_length=150)
     precio = models.IntegerField(validators=[validar_precio_positivo])
     costo = models.IntegerField(validators=[validar_precio_positivo])
-    categoria = models.CharField(max_length=100)
+    categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     empresa_id = models.IntegerField()
 
 class Inventario(models.Model):
@@ -55,6 +66,23 @@ class Caja(models.Model):
     fecha_apertura = models.DateTimeField(auto_now_add=True, validators=[validar_fecha_no_futura])
     fecha_cierre = models.DateTimeField(null=True, validators=[validar_fecha_no_futura])
     empresa_id = models.IntegerField()
+
+class MovimientoCaja(models.Model):
+    TIPOS_MOVIMIENTO = (
+        ('retiro', 'Retiro'),
+        ('gasto', 'Gasto'),
+        ('entrada', 'Entrada'),
+    )
+    
+    caja = models.ForeignKey(Caja, on_delete=models.CASCADE, related_name='movimientos')
+    tipo = models.CharField(max_length=20, choices=TIPOS_MOVIMIENTO)
+    monto = models.IntegerField(validators=[validar_precio_positivo])
+    concepto = models.CharField(max_length=200)
+    fecha = models.DateTimeField(auto_now_add=True, validators=[validar_fecha_no_futura])
+    empresa_id = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.tipo} - ${self.monto} - {self.concepto}"
 
 # =========================================================
 # MÓDULOS ADICIONALES (ESTÁNDAR)

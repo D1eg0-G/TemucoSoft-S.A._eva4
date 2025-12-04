@@ -16,76 +16,196 @@ import {
   X,
   Save,
   Loader2,
+  Edit,
 } from "lucide-react";
 
 const ClientAdmins = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
-  // ESTADOS CONECTADOS
   const [admins, setAdmins] = useState([]);
+  const [empresas, setEmpresas] = useState([]); // <--- NUEVO ESTADO PARA EMPRESAS
   const [loading, setLoading] = useState(true);
 
-  // Formulario
+  // Estados para edición
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  // Estado para búsqueda
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
-    empresa_id: "", // Asumiendo que asignas una empresa
+    empresa_id: "",
   });
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  // 1. CARGAR ADMINS
-  const fetchAdmins = async () => {
+  // Función para cargar usuarios y empresas
+  const fetchData = async () => {
     try {
       setLoading(true);
-      // Nota: En el Master, esto listará usuarios del staff o superusers si usas el modelo default
-      // O usuarios de una tabla custom si la creaste en el master.
-      const res = await api.get("/usuarios/");
-      setAdmins(res.data);
+      // Hacemos ambas peticiones en paralelo
+      const [resAdmins, resEmpresas] = await Promise.all([
+        api.get("/admin-usuarios/").catch((err) => {
+          console.error("Error al cargar admin-usuarios:", err);
+          return { data: [] };
+        }),
+        api.get("/empresas/").catch((err) => {
+          console.error("Error al cargar empresas:", err);
+          console.error("URL intentada:", err.config?.url);
+          console.error("Base URL:", err.config?.baseURL);
+          return { data: [] };
+        }),
+      ]);
+
+      console.log("✅ Admins cargados:", resAdmins.data.length);
+      console.log(
+        "✅ Empresas cargadas:",
+        resEmpresas.data.length,
+        resEmpresas.data
+      );
+
+      setAdmins(resAdmins.data);
+      setEmpresas(resEmpresas.data); // Guardamos las empresas
     } catch (err) {
-      console.error(err);
+      console.error("Error en fetchData:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAdmins();
+    fetchData();
   }, []);
 
-  // 2. CREAR ADMIN
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/usuarios/", {
-        ...formData,
-        role: "admin_cliente", // Forzamos el rol
-      });
-      alert("Admin creado exitosamente");
+      if (isEditMode) {
+        // Modo edición: actualizar usuario existente
+        const updateData = {
+          empresa: formData.empresa_id || null,
+          role: "admin_cliente",
+        };
+        // Solo enviar password si se ingresó uno nuevo
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+        await api.patch(`/admin-usuarios/${editingId}/`, updateData);
+        alert("Admin actualizado exitosamente");
+      } else {
+        // Modo creación: crear nuevo usuario
+        await api.post("/admin-usuarios/", {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          empresa: formData.empresa_id || null,
+          role: "admin_cliente",
+        });
+        alert("Admin creado exitosamente");
+      }
       setShowModal(false);
-      fetchAdmins();
+      setIsEditMode(false);
+      setEditingId(null);
+      fetchData(); // Recargamos todo
+      setFormData({ username: "", email: "", password: "", empresa_id: "" });
     } catch (err) {
       alert(
-        "Error al crear admin: " +
+        "Error al guardar admin: " +
           (err.response?.data?.detail || "Revise los datos")
       );
+    }
+  };
+
+  const handleOpenEdit = (admin) => {
+    setFormData({
+      username: admin.user?.username || admin.username,
+      email: admin.user?.email || admin.email,
+      password: "",
+      empresa_id: admin.empresa || "",
+    });
+    setEditingId(admin.id);
+    setIsEditMode(true);
+    setShowModal(true);
+  };
+
+  const handleOpenCreate = () => {
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      empresa_id: "",
+    });
+    setIsEditMode(false);
+    setEditingId(null);
+    setShowModal(true);
+  };
+
+  // --- ACCIONES DE USUARIO ---
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    const action = currentStatus ? "desactivar" : "activar";
+    if (
+      !window.confirm(`¿Seguro que deseas ${action} el acceso de este usuario?`)
+    )
+      return;
+    try {
+      await api.patch(`/admin-usuarios/${id}/`, { activo: !currentStatus });
+      fetchData();
+    } catch (err) {
+      alert("Error al cambiar estado.");
+    }
+  };
+
+  const handleResetPassword = async (id) => {
+    const newPass = prompt(
+      "Ingresa la nueva contraseña temporal para este usuario:"
+    );
+    if (!newPass) return;
+    if (newPass.length < 6)
+      return alert("La contraseña debe tener al menos 6 caracteres");
+    try {
+      await api.patch(`/admin-usuarios/${id}/`, { password: newPass });
+      alert("Contraseña actualizada correctamente.");
+    } catch (err) {
+      alert("Error al actualizar contraseña.");
     }
   };
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.type === "select-one"
-        ? "empresa_id"
-        : e.target.type === "email"
-        ? "email"
-        : "username"]: e.target.value,
+      [e.target.name]: e.target.value,
     });
-    // Nota: Ajusta los nombres de inputs según tu necesidad real
+  };
+
+  // Lógica de Filtrado
+  const filteredAdmins = admins.filter((admin) => {
+    const searchLower = searchTerm.toLowerCase();
+    const username = admin.user?.username || admin.username || "";
+    const email = admin.user?.email || admin.email || "";
+    const matchesSearch =
+      username.toLowerCase().includes(searchLower) ||
+      email.toLowerCase().includes(searchLower) ||
+      (admin.empresa_nombre &&
+        admin.empresa_nombre.toLowerCase().includes(searchLower));
+
+    return matchesSearch;
+  });
+
+  // Helper para obtener nombre de empresa por ID
+  const getCompanyName = (empresaData) => {
+    if (!empresaData) return "Sin Asignar";
+    // Si empresaData es un objeto con .nombre, usarlo
+    if (typeof empresaData === "object" && empresaData.nombre)
+      return empresaData.nombre;
+    // Si es solo el nombre directo
+    if (typeof empresaData === "string") return empresaData;
+    return "Sin Asignar";
   };
 
   if (loading)
@@ -108,7 +228,7 @@ const ClientAdmins = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary-ca" onClick={() => setShowModal(true)}>
+          <button className="btn-primary-ca" onClick={handleOpenCreate}>
             <Plus size={18} /> Crear Admin
           </button>
         </div>
@@ -120,6 +240,8 @@ const ClientAdmins = () => {
           <input
             type="text"
             placeholder="Buscar por nombre, email o empresa..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="filters-group">
@@ -130,13 +252,13 @@ const ClientAdmins = () => {
       </div>
 
       <div className="ca-list-body">
-        {admins.length === 0 && (
+        {filteredAdmins.length === 0 && (
           <p style={{ padding: "20px", textAlign: "center" }}>
-            No hay administradores registrados.
+            No hay administradores registrados que coincidan con la búsqueda.
           </p>
         )}
 
-        {admins.map((admin) => (
+        {filteredAdmins.map((admin) => (
           <div
             key={admin.id}
             className={`admin-group ${
@@ -150,27 +272,29 @@ const ClientAdmins = () => {
                 </div>
               </div>
               <div className="col-info">
-                <span className="a-name">{admin.username}</span>
-                <span className="a-email">{admin.email}</span>
+                <span className="a-name">
+                  {admin.user?.first_name ||
+                    admin.user?.username ||
+                    admin.username}
+                </span>
+                <span className="a-email">
+                  {admin.user?.email || admin.email}
+                </span>
               </div>
               <div className="col-company">
                 <div className="company-badge">
-                  <Building2 size={14} /> {admin.empresa_id || "Sin Asignar"}
+                  <Building2 size={14} /> {getCompanyName(admin.empresa_nombre)}
                 </div>
               </div>
               <div className="col-last-login">
                 <small>Último acceso:</small>
-                <span>
-                  {admin.last_login
-                    ? new Date(admin.last_login).toLocaleDateString()
-                    : "Nunca"}
-                </span>
+                <span>Nunca</span>
               </div>
               <div className="col-status">
                 <span
-                  className={`status-dot ${admin.is_active ? "green" : "red"}`}
+                  className={`status-dot ${admin.activo ? "green" : "red"}`}
                 ></span>
-                {admin.is_active ? "Activo" : "Inactivo"}
+                {admin.activo ? "Activo" : "Inactivo"}
               </div>
               <div className="col-action">
                 <button className="btn-expand">
@@ -182,6 +306,7 @@ const ClientAdmins = () => {
                 </button>
               </div>
             </div>
+
             {expandedRowId === admin.id && (
               <div className="admin-details-panel">
                 <div className="details-grid-ca">
@@ -190,17 +315,31 @@ const ClientAdmins = () => {
                       <Shield size={16} /> Seguridad y Acceso
                     </h4>
                     <div className="security-actions">
-                      <button className="btn-sec-action reset">
+                      <button
+                        className="btn-sec-action reset"
+                        onClick={() => handleOpenEdit(admin)}
+                        style={{ backgroundColor: "#0e3c66", color: "white" }}
+                      >
+                        <Edit size={16} /> Editar Admin
+                      </button>
+                      <div className="divider-h"></div>
+                      <button
+                        className="btn-sec-action reset"
+                        onClick={() => handleResetPassword(admin.id)}
+                      >
                         <Key size={16} /> Resetear Contraseña
                       </button>
                       <div className="divider-h"></div>
                       <button
                         className={`btn-sec-action power ${
-                          admin.is_active ? "text-red" : "text-green"
+                          admin.activo ? "text-red" : "text-green"
                         }`}
+                        onClick={() =>
+                          handleToggleStatus(admin.id, admin.activo)
+                        }
                       >
                         <Power size={16} />{" "}
-                        {admin.is_active ? "Desactivar" : "Activar"}
+                        {admin.activo ? "Desactivar Acceso" : "Activar Acceso"}
                       </button>
                     </div>
                   </div>
@@ -227,12 +366,15 @@ const ClientAdmins = () => {
         ))}
       </div>
 
-      {/* --- MODAL CREAR ADMIN --- */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Crear Nuevo Admin Cliente</h3>
+              <h3>
+                {isEditMode
+                  ? "Editar Admin Cliente"
+                  : "Crear Nuevo Admin Cliente"}
+              </h3>
               <button
                 className="btn-close-modal"
                 onClick={() => setShowModal(false)}
@@ -242,13 +384,13 @@ const ClientAdmins = () => {
             </div>
             <form className="form-layout" onSubmit={handleSave}>
               <div className="form-group">
-                <label>Nombre Usuario / Completo</label>
+                <label>Nombre Usuario</label>
                 <input
                   type="text"
+                  name="username"
                   value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
+                  onChange={handleInputChange}
+                  disabled={isEditMode}
                   required
                 />
               </div>
@@ -256,35 +398,50 @@ const ClientAdmins = () => {
                 <label>Correo Electrónico</label>
                 <input
                   type="email"
+                  name="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={handleInputChange}
+                  disabled={isEditMode}
                   required
                 />
               </div>
+
+              {/* --- CAMBIO: INPUT POR SELECT --- */}
               <div className="form-group">
-                <label>Asignar a Empresa (ID)</label>
-                {/* Idealmente sería un Select cargado desde /empresas/ */}
-                <input
-                  type="number"
-                  placeholder="ID Empresa"
+                <label>Asignar a Empresa</label>
+                <select
+                  name="empresa_id"
                   value={formData.empresa_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, empresa_id: e.target.value })
-                  }
-                />
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    fontSize: "14px",
+                  }}
+                >
+                  <option value="">Seleccionar empresa...</option>
+                  {empresas.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.nombre} (ID: {emp.id})
+                    </option>
+                  ))}
+                </select>
               </div>
+              {/* ------------------------------- */}
+
               <div className="form-group">
-                <label>Contraseña Provisoria</label>
+                <label>
+                  Contraseña Provisoria {isEditMode ? "(opcional)" : ""}
+                </label>
                 <input
                   type="password"
+                  name="password"
                   placeholder="******"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  required
+                  onChange={handleInputChange}
+                  required={!isEditMode}
                   minLength="6"
                 />
               </div>
@@ -292,12 +449,17 @@ const ClientAdmins = () => {
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setIsEditMode(false);
+                    setEditingId(null);
+                  }}
                 >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-solid">
-                  <Save size={18} /> Crear Usuario
+                  <Save size={18} />{" "}
+                  {isEditMode ? "Guardar Cambios" : "Crear Usuario"}
                 </button>
               </div>
             </form>

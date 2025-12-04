@@ -17,25 +17,23 @@ import {
 } from "lucide-react";
 
 const SalesPOS = () => {
-  // --- ESTADOS ---
-  const [productsCatalog, setProductsCatalog] = useState([]); // Catálogo completo para búsqueda rápida
+  const [productsCatalog, setProductsCatalog] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Cliente (Podrías conectarlo a un endpoint de clientes también)
+  const [paymentMethod, setPaymentMethod] = useState("efectivo");
+  
   const [customer, setCustomer] = useState({
     name: "Cliente General",
     email: "ventas@local.cl",
   });
 
-  // 1. CARGAR CATÁLOGO (Al montar)
+  // 1. CARGAR CATÁLOGO
   useEffect(() => {
     const loadProducts = async () => {
       try {
         const res = await api.get("/productos/");
-        // Normalizamos los datos para evitar errores si faltan campos
         const normalized = res.data.map((p) => ({
           id: p.id,
           name: p.nombre,
@@ -49,9 +47,18 @@ const SalesPOS = () => {
       }
     };
     loadProducts();
+
+    // Chequear venta suspendida
+    const savedCart = localStorage.getItem("suspendedCart");
+    if (savedCart) {
+      if (window.confirm("Existe una venta suspendida. ¿Desea recuperarla?")) {
+        setCart(JSON.parse(savedCart));
+        localStorage.removeItem("suspendedCart");
+      }
+    }
   }, []);
 
-  // 2. BUSCADOR EN TIEMPO REAL
+  // 2. BUSCADOR
   useEffect(() => {
     if (searchTerm.length > 1) {
       const results = productsCatalog.filter(
@@ -59,13 +66,11 @@ const SalesPOS = () => {
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.sku.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setSearchResults(results.slice(0, 5)); // Mostrar max 5 sugerencias
+      setSearchResults(results.slice(0, 5));
     } else {
       setSearchResults([]);
     }
   }, [searchTerm, productsCatalog]);
-
-  // --- MANEJADORES DEL CARRITO ---
 
   const addToCart = (product) => {
     const existing = cart.find((item) => item.id === product.id);
@@ -78,7 +83,7 @@ const SalesPOS = () => {
     } else {
       setCart([...cart, { ...product, qty: 1 }]);
     }
-    setSearchTerm(""); // Limpiar búsqueda al agregar
+    setSearchTerm("");
     setSearchResults([]);
   };
 
@@ -98,21 +103,19 @@ const SalesPOS = () => {
     setCart(cart.filter((item) => item.id !== id));
   };
 
-  // Cálculos
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const total = subtotal; // Aquí sumarías impuestos si aplica
+  const total = subtotal;
 
-  // 3. FINALIZAR VENTA
   const handleCheckout = async () => {
     if (cart.length === 0) return alert("El carrito está vacío");
     setLoading(true);
 
     try {
       const payload = {
-        sucursal: 1, // ID Fijo o dinámico del contexto
+        sucursal: 1, 
         usuario: 1,
         total: total,
-        metodo_pago: "efectivo",
+        metodo_pago: paymentMethod, // Método dinámico
         items: cart.map((item) => ({
           producto: item.id,
           cantidad: item.qty,
@@ -122,7 +125,7 @@ const SalesPOS = () => {
 
       await api.post("/ventas/", payload);
       alert("¡Venta registrada correctamente!");
-      setCart([]); // Limpiar carrito
+      setCart([]);
     } catch (err) {
       console.error(err);
       alert("Error al procesar venta. Verifique stock.");
@@ -131,11 +134,26 @@ const SalesPOS = () => {
     }
   };
 
+  // Funcionalidad Suspender Venta
+  const handleSuspend = () => {
+    if (cart.length === 0) return;
+    localStorage.setItem("suspendedCart", JSON.stringify(cart));
+    setCart([]);
+    alert("Venta suspendida y guardada localmente.");
+  };
+
+  // Funcionalidad Cambiar Cliente (Simulada por Prompt por ahora)
+  const handleChangeCustomer = () => {
+    const newName = prompt("Ingrese nombre del cliente:", customer.name);
+    if (newName) {
+      setCustomer({ ...customer, name: newName });
+    }
+  };
+
   return (
     <div className="pos-container">
-      {/* --- SECCIÓN IZQUIERDA: LISTA DE PRODUCTOS --- */}
+      {/* SECCIÓN IZQUIERDA: PRODUCTOS */}
       <div className="pos-left-panel">
-        {/* Barra de Búsqueda */}
         <div className="pos-search-bar" style={{ position: "relative" }}>
           <div className="input-wrapper">
             <Search className="search-icon" size={20} />
@@ -151,7 +169,6 @@ const SalesPOS = () => {
             <LayoutGrid size={18} /> Catálogo
           </button>
 
-          {/* SUGERENCIAS DE BÚSQUEDA (Dropdown flotante simple) */}
           {searchResults.length > 0 && (
             <div
               style={{
@@ -188,7 +205,6 @@ const SalesPOS = () => {
           )}
         </div>
 
-        {/* Tabla de Productos en Carrito (Misma estructura HTML tuya) */}
         <div className="pos-products-list">
           <div className="products-header">
             <span className="col-action"></span>
@@ -201,7 +217,6 @@ const SalesPOS = () => {
           <div className="products-body">
             {cart.map((item) => (
               <div key={item.id} className="product-row">
-                {/* Botón Eliminar */}
                 <div className="col-action">
                   <button
                     className="btn-delete"
@@ -210,22 +225,16 @@ const SalesPOS = () => {
                     <XCircle size={18} />
                   </button>
                 </div>
-
-                {/* Detalles */}
                 <div className="col-name">
                   <span className="p-name">{item.name}</span>
                   <div className="p-meta">
                     <span>SKU: {item.sku}</span>
-                    {/* Stock disponible visual */}
                     <span className="stock-label">
                       Stock: {item.stock - item.qty}
                     </span>
                   </div>
                 </div>
-
                 <div className="col-price">${item.price.toLocaleString()}</div>
-
-                {/* Cantidad */}
                 <div className="col-qty">
                   <div className="qty-selector">
                     <button onClick={() => updateQty(item.id, -1)}>
@@ -237,7 +246,6 @@ const SalesPOS = () => {
                     </button>
                   </div>
                 </div>
-
                 <div className="col-total">
                   ${(item.price * item.qty).toLocaleString()}
                 </div>
@@ -255,10 +263,10 @@ const SalesPOS = () => {
         </div>
       </div>
 
-      {/* --- SECCIÓN DERECHA: CHECKOUT --- */}
+      {/* SECCIÓN DERECHA: CHECKOUT */}
       <div className="pos-right-panel">
         <div className="pos-top-actions">
-          <button className="action-btn suspend">
+          <button className="action-btn suspend" onClick={handleSuspend}>
             <PauseCircle size={16} /> Suspender
           </button>
           <button className="action-btn cancel" onClick={() => setCart([])}>
@@ -274,7 +282,9 @@ const SalesPOS = () => {
             <h4>{customer.name}</h4>
             <span>{customer.email}</span>
           </div>
-          <button className="btn-edit-customer">Cambiar</button>
+          <button className="btn-edit-customer" onClick={handleChangeCustomer}>
+            Cambiar
+          </button>
         </div>
 
         <div className="totals-section">
@@ -295,13 +305,22 @@ const SalesPOS = () => {
         <div className="payment-methods">
           <label>Método de Pago</label>
           <div className="methods-grid">
-            <button className="method-btn active">
+            <button
+              className={`method-btn ${paymentMethod === "efectivo" ? "active" : ""}`}
+              onClick={() => setPaymentMethod("efectivo")}
+            >
               <Banknote size={20} /> Efectivo
             </button>
-            <button className="method-btn">
+            <button
+              className={`method-btn ${paymentMethod === "tarjeta" ? "active" : ""}`}
+              onClick={() => setPaymentMethod("tarjeta")}
+            >
               <CreditCard size={20} /> Tarjeta
             </button>
-            <button className="method-btn">
+            <button
+              className={`method-btn ${paymentMethod === "transferencia" ? "active" : ""}`}
+              onClick={() => setPaymentMethod("transferencia")}
+            >
               <LayoutGrid size={20} /> Transfer
             </button>
           </div>

@@ -2,26 +2,16 @@ import React, { useState, useEffect } from "react";
 import api from "../../../admin-cliente/config/api";
 import "./DashboardTS.css";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   Legend,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import {
   Building2,
   DollarSign,
-  Users,
-  Activity,
-  AlertTriangle,
-  Clock,
-  ChevronRight,
   Loader2,
 } from "lucide-react";
 
@@ -40,19 +30,21 @@ const DashboardTS = () => {
         setLoading(true);
         const [resEmpresas, resSuscripciones] = await Promise.all([
           api.get("/empresas/"),
-          api.get("/suscripciones/"), // Asumiendo que creaste este endpoint en master
+          api.get("/suscripciones/"), 
         ]);
 
         const empresas = resEmpresas.data;
-        // Calculos simples
+   
+        // Calculos simples basados en la respuesta real
         const basicos = empresas.filter((e) =>
-          e.suscripcion?.plan?.nombre.includes("basico")
+          e.suscripcion?.plan?.nombre?.toLowerCase().includes("basico")
         ).length;
         const medios = empresas.filter((e) =>
-          e.suscripcion?.plan?.nombre.includes("medio")
+          e.suscripcion?.plan?.nombre?.toLowerCase().includes("estandar") ||
+          e.suscripcion?.plan?.nombre?.toLowerCase().includes("medio")
         ).length;
         const premium = empresas.filter((e) =>
-          e.suscripcion?.plan?.nombre.includes("premium")
+          e.suscripcion?.plan?.nombre?.toLowerCase().includes("premium")
         ).length;
 
         setStats({
@@ -93,7 +85,7 @@ const DashboardTS = () => {
     },
     {
       title: "Ingresos (Estimado)",
-      value: "$ --", // Requeriría sumar precios de planes
+      value: "$ --", // Se calcularía sumando suscripciones activas
       change: "Mensual",
       isPositive: true,
       icon: <DollarSign size={24} color="#0e3c66" />,

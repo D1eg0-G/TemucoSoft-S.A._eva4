@@ -1,47 +1,54 @@
 import React, { useState, useEffect } from "react";
-import api from "../../config/api"; // Tu configuración de API real
-import "./CashRegister.css"; // Tu CSS original
+import api from "../../config/api";
+import "./CashRegister.css";
 import {
   Search,
-  Filter,
-  ChevronDown,
-  ChevronUp,
   Wallet,
   Banknote,
   CreditCard,
   Lock,
   Unlock,
-  AlertCircle,
-  CheckCircle,
   RotateCcw,
   Printer,
-  Loader2, // Icono de carga
+  Loader2,
+  DollarSign,
+  ChevronDown,
+  ChevronUp,
+  X,
 } from "lucide-react";
 
 const CashRegister = () => {
   const [expandedRowId, setExpandedRowId] = useState(null);
-
-  // ESTADOS DE DATOS (Backend)
   const [loading, setLoading] = useState(true);
-  const [cajaActual, setCajaActual] = useState(null); // Objeto sesión actual o null
-  const [history, setHistory] = useState([]); // Array de sesiones cerradas
+  const [cajaActual, setCajaActual] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [ventas, setVentas] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showMovementModal, setShowMovementModal] = useState(false);
 
-  // 1. CARGAR DATOS DE LA API
+  // Formulario de movimiento (gasto/retiro)
+  const [movementData, setMovementData] = useState({
+    tipo: "retiro",
+    monto: "",
+    concepto: "",
+  });
+
   const fetchCajaData = async () => {
     try {
       setLoading(true);
-      // Petición al endpoint
-      const res = await api.get("/cajas/");
-
-      // Separar la sesión abierta de las cerradas
-      // Asumimos que si fecha_cierre es null, es la sesión activa
-      const openSession = res.data.find((c) => !c.fecha_cierre);
-      const closedSessions = res.data.filter((c) => c.fecha_cierre); // Podrías ordenar por fecha desc aquí
+      const [resCajas, resVentas] = await Promise.all([
+        api.get("/cajas/"),
+        api.get("/ventas/").catch(() => ({ data: [] })),
+      ]);
+      const openSession = resCajas.data.find((c) => !c.fecha_cierre);
+      const closedSessions = resCajas.data.filter((c) => c.fecha_cierre);
 
       setCajaActual(openSession || null);
       setHistory(closedSessions);
+      setVentas(resVentas.data);
     } catch (err) {
       console.error("Error al cargar caja", err);
+      alert("Error al cargar datos de caja");
     } finally {
       setLoading(false);
     }
@@ -51,47 +58,115 @@ const CashRegister = () => {
     fetchCajaData();
   }, []);
 
-  // 2. ABRIR CAJA
   const handleOpenRegister = async () => {
     const monto = prompt("Ingrese monto inicial de apertura:");
-    if (!monto) return;
+    if (!monto || isNaN(monto) || parseFloat(monto) < 0) {
+      alert("Monto inválido");
+      return;
+    }
 
     try {
       await api.post("/cajas/", {
-        monto_inicial: parseInt(monto),
-        usuario: 1, // En producción: obtener ID del user context
-        sucursal: 1, // En producción: obtener ID de sucursal user context
+        monto_inicial: parseFloat(monto),
+        usuario: 1,
+        sucursal: 1,
+        fecha_apertura: new Date().toISOString(),
       });
       alert("Caja abierta exitosamente");
       fetchCajaData();
     } catch (e) {
-      alert(
-        "Error al abrir caja: " +
-          (e.response?.data?.detail || "Revise los datos")
-      );
+      console.error("Error al abrir caja:", e);
+      alert("Error al abrir caja: " + (e.response?.data?.detail || "Error"));
     }
   };
 
-  // 3. CERRAR CAJA
   const handleCloseRegister = async (id) => {
-    const montoFinal = prompt("Ingrese monto final en caja (Arqueo):");
-    if (!montoFinal) return;
+    const montoFinal = prompt("Ingrese monto final en caja (Arqueo físico):");
+    if (!montoFinal || isNaN(montoFinal)) {
+      alert("Monto inválido");
+      return;
+    }
 
     try {
       await api.patch(`/cajas/${id}/`, {
         fecha_cierre: new Date().toISOString(),
-        monto_final: parseInt(montoFinal),
+        monto_final: parseFloat(montoFinal),
       });
       alert("Turno cerrado correctamente.");
       fetchCajaData();
     } catch (e) {
-      alert("Error al cerrar caja");
+      console.error("Error al cerrar caja:", e);
+      alert("Error al cerrar caja: " + (e.response?.data?.detail || "Error"));
+    }
+  };
+
+  const handleMovement = async (e) => {
+    e.preventDefault();
+    if (!movementData.monto || parseFloat(movementData.monto) <= 0) {
+      alert("Ingrese un monto válido");
+      return;
+    }
+
+    try {
+      // Llamada real al backend
+      await api.post("/movimientos-caja/", {
+        ...movementData,
+        caja: cajaActual?.id,
+        monto: parseInt(movementData.monto),
+      });
+
+      alert(
+        `${movementData.tipo === "retiro" ? "Retiro" : "Gasto"} registrado: $${
+          movementData.monto
+        } - ${movementData.concepto}`
+      );
+      setShowMovementModal(false);
+      setMovementData({ tipo: "retiro", monto: "", concepto: "" });
+    } catch (err) {
+      console.error(err);
+      alert(
+        "Error al registrar movimiento: " +
+          (err.response?.data?.detail || "Revise conexión")
+      );
     }
   };
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
+
+  // Calcular ventas del turno actual
+  const ventasTurnoActual = cajaActual
+    ? ventas.filter(
+        (v) =>
+          new Date(v.fecha_venta) >= new Date(cajaActual.fecha_apertura) &&
+          (!cajaActual.fecha_cierre ||
+            new Date(v.fecha_venta) <= new Date(cajaActual.fecha_cierre))
+      )
+    : [];
+
+  const ventasEfectivo = ventasTurnoActual
+    .filter((v) => v.metodo_pago === "efectivo")
+    .reduce((sum, v) => sum + parseFloat(v.total), 0);
+
+  const ventasTarjeta = ventasTurnoActual
+    .filter((v) => ["tarjeta", "debito", "credito"].includes(v.metodo_pago))
+    .reduce((sum, v) => sum + parseFloat(v.total), 0);
+
+  const totalEnCaja = cajaActual
+    ? parseFloat(cajaActual.monto_inicial) + ventasEfectivo
+    : 0;
+
+  const handlePrintZ = (session) => {
+    // Abrir diálogo de impresión nativo
+    window.print();
+  };
+
+  const filteredHistory = history.filter(
+    (s) =>
+      s.usuario?.toString().includes(searchTerm) ||
+      s.id.toString().includes(searchTerm)
+  );
 
   if (loading) {
     return (
@@ -109,15 +184,15 @@ const CashRegister = () => {
     );
   }
 
-  // Variable derivada para saber si está abierta
   const isRegisterOpen = !!cajaActual;
 
   return (
     <div className="cash-container">
-      {/* 1. HEADER */}
+      {/* HEADER */}
       <div className="cash-header">
         <div>
-          <h2 className="page-title">Control de turnos, aperturas y cierres</h2>
+          <h2 className="page-title">Control de Caja</h2>
+          <p className="page-subtitle">Turnos, aperturas y cierres de caja</p>
         </div>
         <div className="header-status">
           {isRegisterOpen ? (
@@ -132,9 +207,8 @@ const CashRegister = () => {
         </div>
       </div>
 
-      {/* 2. PANEL DE CONTROL (Sesión Actual) */}
+      {/* PANEL DE CONTROL */}
       {!isRegisterOpen ? (
-        // --- VISTA CAJA CERRADA (Usando tus clases para mantener estilo) ---
         <div
           className="current-session-card"
           style={{
@@ -160,7 +234,6 @@ const CashRegister = () => {
           </button>
         </div>
       ) : (
-        // --- VISTA CAJA ABIERTA ---
         <div className="current-session-card">
           <div className="cs-header">
             <h3>Turno Actual (#{cajaActual.id})</h3>
@@ -187,12 +260,21 @@ const CashRegister = () => {
               </div>
             </div>
 
-            {/* Ventas Efectivo (Placeholder: requieres endpoint de ventas para sumar esto real) */}
+            {/* Ventas Efectivo */}
             <div className="money-card cash">
               <span className="lbl">
                 <Banknote size={16} /> Ventas Efectivo
               </span>
-              <div className="amount text-green">+$0</div>
+              <div className="amount text-green">
+                +${ventasEfectivo.toLocaleString()}
+              </div>
+              <small>
+                {
+                  ventasTurnoActual.filter((v) => v.metodo_pago === "efectivo")
+                    .length
+                }{" "}
+                transacciones
+              </small>
             </div>
 
             {/* Ventas Tarjeta */}
@@ -200,22 +282,35 @@ const CashRegister = () => {
               <span className="lbl">
                 <CreditCard size={16} /> Ventas Tarjeta/Transf.
               </span>
-              <div className="amount text-blue">+$0</div>
+              <div className="amount text-blue">
+                +${ventasTarjeta.toLocaleString()}
+              </div>
+              <small>
+                {
+                  ventasTurnoActual.filter((v) =>
+                    ["tarjeta", "debito", "credito"].includes(v.metodo_pago)
+                  ).length
+                }{" "}
+                transacciones
+              </small>
             </div>
 
             {/* Total Esperado */}
             <div className="money-card total">
-              <span className="lbl">Total en Caja (Estimado)</span>
+              <span className="lbl">Total en Caja (Esperado)</span>
               <div className="amount total-val">
-                ${Number(cajaActual.monto_inicial).toLocaleString()}
+                ${totalEnCaja.toLocaleString()}
               </div>
               <small className="hint">*Solo efectivo físico</small>
             </div>
           </div>
 
           <div className="cs-actions">
-            <button className="btn-secondary-cash">
-              Ingresar Gasto / Retiro
+            <button
+              className="btn-secondary-cash"
+              onClick={() => setShowMovementModal(true)}
+            >
+              <DollarSign size={16} /> Registrar Gasto / Retiro
             </button>
             <button
               className="btn-primary-close"
@@ -227,34 +322,35 @@ const CashRegister = () => {
         </div>
       )}
 
-      {/* 3. HISTORIAL DE CIERRES */}
+      {/* HISTORIAL DE CIERRES */}
       <div className="cash-history-section">
         <div className="history-toolbar">
           <h3>Historial de Cierres</h3>
           <div className="filters-group">
-            <button className="filter-btn">
-              Este Mes <ChevronDown size={14} />
-            </button>
-            <button className="filter-btn">
-              Cajero: Todos <ChevronDown size={14} />
-            </button>
+            <div className="search-box" style={{ marginRight: "10px" }}>
+              <Search size={16} />
+              <input
+                type="text"
+                placeholder="Buscar por ID o cajero..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
         <div className="history-list">
-          {/* Header Tabla */}
           <div className="h-table-header">
             <div className="col-date">Fecha</div>
-            <div className="col-user">Cajero (ID)</div>
-            <div className="col-start">Inicio</div>
-            <div className="col-end">Cierre</div>
-            <div className="col-diff">Diferencia</div>
-            <div className="col-status">Estado</div>
+            <div className="col-user">Cajero</div>
+            <div className="col-start">Apertura</div>
+            <div className="col-end">Cierre (Real)</div>
+            <div className="col-diff">Esperado</div>
+            <div className="col-status">Diferencia</div>
             <div className="col-action"></div>
           </div>
 
-          {/* Body Tabla */}
-          {history.length === 0 && (
+          {filteredHistory.length === 0 && (
             <div
               style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}
             >
@@ -262,10 +358,11 @@ const CashRegister = () => {
             </div>
           )}
 
-          {history.map((ses) => {
-            // Calculo simple de diferencia (Monto final - Inicial)
-            // Nota: La diferencia real necesita (Inicial + Ventas - Gastos) vs Final
-            const diff = (ses.monto_final || 0) - (ses.monto_inicial || 0);
+          {filteredHistory.map((ses) => {
+            const inicial = parseFloat(ses.monto_inicial) || 0;
+            const final = parseFloat(ses.monto_final) || 0;
+            const esperado = inicial; // Simplificación
+            const diferencia = final - esperado;
 
             return (
               <div
@@ -278,23 +375,28 @@ const CashRegister = () => {
                   <div className="col-date">
                     {new Date(ses.fecha_cierre).toLocaleDateString()}
                   </div>
-                  <div className="col-user">{ses.usuario}</div>
+                  <div className="col-user">ID: {ses.usuario}</div>
                   <div className="col-start">
                     ${Number(ses.monto_inicial).toLocaleString()}
                   </div>
                   <div className="col-end">
                     ${Number(ses.monto_final).toLocaleString()}
                   </div>
+                  <div className="col-diff">${esperado.toLocaleString()}</div>
                   <div
-                    className={`col-diff ${
-                      diff < 0 ? "text-red" : "text-green"
+                    className={`col-status ${
+                      diferencia < 0
+                        ? "text-red"
+                        : diferencia > 0
+                        ? "text-green"
+                        : "text-gray"
                     }`}
                   >
-                    {/* Placeholder, la lógica real depende de las ventas */}
-                    --
-                  </div>
-                  <div className="col-status">
-                    <span className="status-pill green">Cerrado</span>
+                    {diferencia === 0
+                      ? "Cuadrado"
+                      : `${diferencia > 0 ? "+" : ""}$${Math.abs(
+                          diferencia
+                        ).toLocaleString()}`}
                   </div>
                   <div className="col-action">
                     <button className="btn-expand">
@@ -307,7 +409,6 @@ const CashRegister = () => {
                   </div>
                 </div>
 
-                {/* Detalle Expandible */}
                 {expandedRowId === ses.id && (
                   <div className="history-detail">
                     <div className="detail-grid">
@@ -324,19 +425,24 @@ const CashRegister = () => {
                         </strong>
                       </div>
                       <div>
+                        <small>Fecha Apertura</small>
+                        <strong>
+                          {new Date(ses.fecha_apertura).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div>
                         <small>Fecha Cierre</small>
                         <strong>
                           {new Date(ses.fecha_cierre).toLocaleString()}
                         </strong>
                       </div>
-                      <div>
-                        <small>Total Sistema</small>
-                        <strong>--</strong> {/* Necesita cálculo de ventas */}
-                      </div>
                     </div>
                     <div className="detail-footer">
-                      <button className="btn-print">
-                        <Printer size={16} /> Imprimir Z
+                      <button
+                        className="btn-print"
+                        onClick={() => handlePrintZ(ses)}
+                      >
+                        <Printer size={16} /> Imprimir Reporte Z
                       </button>
                     </div>
                   </div>
@@ -346,6 +452,78 @@ const CashRegister = () => {
           })}
         </div>
       </div>
+
+      {/* MODAL MOVIMIENTO */}
+      {showMovementModal && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: "500px" }}>
+            <div className="modal-header">
+              <h3>Registrar Movimiento de Caja</h3>
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowMovementModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form className="form-layout" onSubmit={handleMovement}>
+              <div className="form-group">
+                <label>Tipo de Movimiento</label>
+                <select
+                  value={movementData.tipo}
+                  onChange={(e) =>
+                    setMovementData({ ...movementData, tipo: e.target.value })
+                  }
+                >
+                  <option value="retiro">Retiro de Efectivo</option>
+                  <option value="gasto">Gasto / Pago</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Monto *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={movementData.monto}
+                  onChange={(e) =>
+                    setMovementData({ ...movementData, monto: e.target.value })
+                  }
+                  required
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="form-group">
+                <label>Concepto / Motivo *</label>
+                <textarea
+                  rows="3"
+                  value={movementData.concepto}
+                  onChange={(e) =>
+                    setMovementData({
+                      ...movementData,
+                      concepto: e.target.value,
+                    })
+                  }
+                  required
+                  placeholder="Ej: Compra de insumos, Remesa banco, etc."
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowMovementModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-solid">
+                  Registrar Movimiento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

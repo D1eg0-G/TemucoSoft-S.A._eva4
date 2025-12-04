@@ -30,14 +30,14 @@ export const menuCliente = [
     title: "Caja",
     icon: <Wallet size={20} />,
     path: "CashRegister",
-    allowedRoles: [ROLES.VENDEDOR, ROLES.ADMIN],
+    allowedRoles: [ROLES.VENDEDOR],
     module: "cashregister",
   },
   {
     title: "Ventas (POS)",
     icon: <ShoppingCart size={20} />,
     path: "Sale",
-    allowedRoles: [ROLES.VENDEDOR, ROLES.ADMIN, ROLES.GERENTE],
+    allowedRoles: [ROLES.VENDEDOR],
     module: "sale",
   },
   {

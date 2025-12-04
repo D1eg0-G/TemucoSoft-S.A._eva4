@@ -10,20 +10,31 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Calendar, TrendingUp, Package, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Package,
+  Loader2,
+  ChevronDown,
+} from "lucide-react";
 
 const Reports = () => {
   const [activeReport, setActiveReport] = useState("Ventas");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Estado para el filtro de período
+  const [rangoFecha, setRangoFecha] = useState("total"); // total, mes, hoy
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false);
+
   useEffect(() => {
     const loadStats = async () => {
       setLoading(true);
       try {
+        // Se envia el parámetro 'rango' al backend para obtener datos reales filtrados
         const [resVentas, resStock] = await Promise.all([
-          api.get("/reportes/ventas/"),
-          api.get("/reportes/stock/"),
+          api.get(`/reportes/ventas/`, { params: { rango: rangoFecha } }),
+          api.get("/reportes/stock/", { params: { rango: rangoFecha } }),
         ]);
         setStats({
           ventas: resVentas.data,
@@ -36,22 +47,108 @@ const Reports = () => {
       }
     };
     loadStats();
-  }, []);
+  }, [rangoFecha]); // Se recarga cuando cambia el rango
+
+  // Etiquetas para el botón
+  const getLabel = () => {
+    switch (rangoFecha) {
+      case "mes":
+        return "Este Mes";
+      case "hoy":
+        return "Hoy";
+      default:
+        return "Período Total";
+    }
+  };
 
   if (loading)
     return (
       <div style={{ padding: "50px", textAlign: "center" }}>
-        <Loader2 className="animate-spin" size={48} />
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
       </div>
     );
 
   return (
     <div className="reports-container">
       <div className="rep-header">
-        <div className="header-actions">
-          <button className="btn-secondary-rep">
-            <Calendar size={18} /> Período Total
+        <div className="header-actions" style={{ position: "relative" }}>
+          <button
+            className="btn-secondary-rep"
+            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+          >
+            <Calendar size={18} /> {getLabel()} <ChevronDown size={14} />
           </button>
+
+          {/* Menú desplegable funcional */}
+          {showPeriodMenu && (
+            <div
+              className="dropdown-menu-reports"
+              style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: "5px",
+                background: "white",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                zIndex: 20,
+                minWidth: "150px",
+              }}
+            >
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  setRangoFecha("total");
+                  setShowPeriodMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                Histórico Total
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  setRangoFecha("mes");
+                  setShowPeriodMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                Este Mes
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  setRangoFecha("hoy");
+                  setShowPeriodMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                Hoy
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -75,7 +172,7 @@ const Reports = () => {
         {activeReport === "Ventas" && stats?.ventas && (
           <div className="report-grid">
             <div className="chart-card half-width">
-              <h3>Resumen de Ventas</h3>
+              <h3>Resumen de Ventas ({getLabel()})</h3>
               <div className="summary-grid">
                 <div className="summary-box">
                   <small>Total Vendido</small>

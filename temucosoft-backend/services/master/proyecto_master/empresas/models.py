@@ -2,8 +2,26 @@
 
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 import uuid
 from .utils import validar_rut, validar_precio_positivo, validar_fecha_no_futura, validar_telefono_chileno
+
+User = get_user_model()
+
+# 0. USUARIOS ADMIN (Extensión de User para guardar empresa)
+class UsuarioAdmin(models.Model):
+    ROLES = (
+        ('admin_cliente', 'Administrador Cliente'),
+        ('super_admin', 'Super Administrador'),
+    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
+    empresa = models.ForeignKey('Empresa', on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.CharField(max_length=20, choices=ROLES, default='admin_cliente')
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"
 
 # 1. PLANES (Lo que vendes)
 class Plan(models.Model):
@@ -49,10 +67,17 @@ class Empresa(models.Model):
 
 # 3. SUSCRIPCIONES
 class Suscripcion(models.Model):
+    ESTADO_CHOICES = [
+        ('activa', 'Activa'),
+        ('suspendida', 'Suspendida'),
+        ('cancelada', 'Cancelada'),
+    ]
+    
     empresa = models.OneToOneField(Empresa, on_delete=models.CASCADE)
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
     fecha_inicio = models.DateField(default=timezone.now)
     fecha_fin = models.DateField(null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
     activo = models.BooleanField(default=True)
     
     # Instancia física asignada

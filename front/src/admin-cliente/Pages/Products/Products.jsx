@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../config/api";
 import "./Products.css";
 import "/src//App.css";
@@ -16,55 +16,128 @@ import {
   MoreHorizontal,
   X,
   Save,
+  Loader2,
 } from "lucide-react";
 
 const Products = () => {
   const [activeTab, setActiveTab] = useState("Catalogo");
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Datos simulados
-  const products = [
-    {
-      id: 1,
-      sku: "PROD-100",
-      name: "Notebook HP ProBook",
-      category: "Computación",
-      cost: 350000,
-      price: 490000,
-      status: true,
-      image:
-        "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=50&q=80",
-    },
-    {
-      id: 2,
-      sku: "FURN-200",
-      name: "Silla Ergonómica",
-      category: "Mobiliario",
-      cost: 70000,
-      price: 120000,
-      status: true,
-      image:
-        "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=50&q=80",
-    },
-    {
-      id: 3,
-      sku: "ACC-305",
-      name: "Mouse Inalámbrico",
-      category: "Accesorios",
-      cost: 8000,
-      price: 15990,
-      status: true,
-      image:
-        "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=50&q=80",
-    },
-  ];
+  const [productFormData, setProductFormData] = useState({
+    nombre: "",
+    sku: "",
+    categoria: "",
+    precio: "",
+    costo: "",
+  });
 
-  const categories = [
-    { id: 1, name: "Computación", count: 120, status: "Activa" },
-    { id: 2, name: "Mobiliario", count: 45, status: "Activa" },
-    { id: 3, name: "Accesorios", count: 300, status: "Activa" },
-  ];
+  const [categoryFormData, setCategoryFormData] = useState({
+    nombre: "",
+    descripcion: "",
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [resProducts, resCategories] = await Promise.all([
+        api.get("/productos/"),
+        api.get("/categorias/"),
+      ]);
+      setProducts(resProducts.data);
+      setCategories(resCategories.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitProduct = async (e) => {
+    e.preventDefault();
+    try {
+      if (isEditMode) {
+        await api.put(`/productos/${editingId}/`, {
+          ...productFormData,
+          empresa_id: 1,
+        });
+        alert("Producto actualizado");
+      } else {
+        await api.post("/productos/", {
+          ...productFormData,
+          empresa_id: 1,
+        });
+        alert("Producto creado");
+      }
+      setShowProductModal(false);
+      resetProductForm();
+      fetchData();
+    } catch (err) {
+      alert("Error: " + JSON.stringify(err.response?.data));
+    }
+  };
+
+  const handleSubmitCategory = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/categorias/", {
+        ...categoryFormData,
+        empresa_id: 1,
+      });
+      alert("Categoría creada");
+      setShowCategoryModal(false);
+      setCategoryFormData({ nombre: "", descripcion: "" });
+      fetchData();
+    } catch (err) {
+      alert("Error: " + JSON.stringify(err.response?.data));
+    }
+  };
+
+  const handleEditProduct = (product) => {
+    setProductFormData({
+      nombre: product.nombre,
+      sku: product.sku,
+      categoria: product.categoria,
+      precio: product.precio,
+      costo: product.costo || "",
+    });
+    setEditingId(product.id);
+    setIsEditMode(true);
+    setShowProductModal(true);
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm("¿Eliminar este producto?")) return;
+    try {
+      await api.delete(`/productos/${id}/`);
+      alert("Producto eliminado");
+      fetchData();
+    } catch (err) {
+      alert("Error al eliminar");
+    }
+  };
+
+  const resetProductForm = () => {
+    setProductFormData({
+      nombre: "",
+      sku: "",
+      categoria: "",
+      precio: "",
+      costo: "",
+    });
+    setIsEditMode(false);
+    setEditingId(null);
+  };
 
   const calculateMargin = (price, cost) => {
     const margin = price - cost;
@@ -72,31 +145,54 @@ const Products = () => {
     return { value: margin, percent: percent };
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("Datos guardados exitosamente");
-    setShowProductModal(false);
-    setShowCategoryModal(false);
+  const handleExport = () => {
+    const csvContent = [
+      ["SKU", "Nombre", "Categoría", "Precio", "Stock"],
+      ...products.map((p) => [p.sku, p.nombre, p.categoria, p.precio, p.stock]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "productos.csv";
+    a.click();
   };
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading)
+    return (
+      <div style={{ padding: "50px", textAlign: "center" }}>
+        <Loader2 className="animate-spin" size={48} color="#0e3c66" />
+      </div>
+    );
 
   return (
     <div className="products-module-container">
-      {/* HEADER */}
       <div className="prod-header">
         <div className="header-actions">
-          <button className="btn-secondary-prod">
+          <button className="btn-secondary-prod" onClick={handleExport}>
             <Download size={18} /> Exportar
           </button>
           <button
             className="btn-primary-prod"
-            onClick={() => setShowProductModal(true)}
+            onClick={() => {
+              resetProductForm();
+              setShowProductModal(true);
+            }}
           >
             <Plus size={18} /> Nuevo Producto
           </button>
         </div>
       </div>
 
-      {/* TABS */}
       <div className="prod-tabs">
         <button
           className={`prod-tab ${activeTab === "Catalogo" ? "active" : ""}`}
@@ -118,20 +214,18 @@ const Products = () => {
         </button>
       </div>
 
-      {/* CONTENIDO */}
       <div className="prod-content-card">
-        {/* TABLA CATÁLOGO */}
         {activeTab === "Catalogo" && (
           <>
             <div className="prod-toolbar">
               <div className="search-box-prod">
                 <Search size={18} />
-                <input type="text" placeholder="Buscar por nombre, SKU..." />
-              </div>
-              <div className="filter-group">
-                <button className="btn-filter-prod">
-                  <Filter size={16} /> Filtros
-                </button>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, SKU..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
 
@@ -142,33 +236,35 @@ const Products = () => {
                   <th>SKU</th>
                   <th>Categoría</th>
                   <th>Precio Venta</th>
-                  <th>Estado</th>
+                  <th>Stock</th>
                   <th className="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
-                  <tr key={p.id} className={!p.status ? "row-inactive" : ""}>
+                {filteredProducts.map((p) => (
+                  <tr key={p.id}>
                     <td className="col-img-name">
-                      <img src={p.image} alt={p.name} className="p-thumb" />
-                      <span className="p-name">{p.name}</span>
+                      <span className="p-name">{p.nombre}</span>
                     </td>
                     <td className="col-sku">{p.sku}</td>
                     <td>
-                      <span className="cat-badge">{p.category}</span>
+                      <span className="cat-badge">{p.categoria}</span>
                     </td>
-                    <td className="fw-700">${p.price.toLocaleString()}</td>
-                    <td>
-                      <span
-                        className={`status-dot ${p.status ? "green" : "red"}`}
-                      ></span>
-                      {p.status ? "Activo" : "Inactivo"}
+                    <td className="fw-700">
+                      ${parseInt(p.precio).toLocaleString()}
                     </td>
+                    <td>{p.stock}</td>
                     <td className="col-actions">
-                      <button className="btn-icon edit">
+                      <button
+                        className="btn-icon edit"
+                        onClick={() => handleEditProduct(p)}
+                      >
                         <Edit size={16} />
                       </button>
-                      <button className="btn-icon delete">
+                      <button
+                        className="btn-icon delete"
+                        onClick={() => handleDeleteProduct(p.id)}
+                      >
                         <Trash2 size={16} />
                       </button>
                     </td>
@@ -179,7 +275,6 @@ const Products = () => {
           </>
         )}
 
-        {/* VISTA CATEGORÍAS */}
         {activeTab === "Categorias" && (
           <div className="categories-view">
             <div className="cat-header-actions">
@@ -195,14 +290,11 @@ const Products = () => {
               {categories.map((c) => (
                 <div key={c.id} className="cat-card">
                   <div className="cat-info">
-                    <h4>{c.name}</h4>
-                    <span>{c.count} productos</span>
+                    <h4>{c.nombre}</h4>
+                    <span>{c.descripcion}</span>
                   </div>
                   <div className="cat-status">
-                    <span className="badge-pill green">{c.status}</span>
-                    <button className="btn-dots">
-                      <MoreHorizontal size={16} />
-                    </button>
+                    <span className="badge-pill green">Activa</span>
                   </div>
                 </div>
               ))}
@@ -210,7 +302,6 @@ const Products = () => {
           </div>
         )}
 
-        {/* VISTA RENTABILIDAD */}
         {activeTab === "Rentabilidad" && (
           <table className="prod-table">
             <thead>
@@ -225,12 +316,17 @@ const Products = () => {
             </thead>
             <tbody>
               {products.map((p) => {
-                const margin = calculateMargin(p.price, p.cost);
+                const cost = parseInt(p.costo) || 0;
+                const price = parseInt(p.precio) || 0;
+                const margin =
+                  cost > 0
+                    ? calculateMargin(price, cost)
+                    : { value: 0, percent: 0 };
                 return (
                   <tr key={p.id}>
-                    <td className="fw-600">{p.name}</td>
-                    <td className="text-soft">${p.cost.toLocaleString()}</td>
-                    <td className="fw-700">${p.price.toLocaleString()}</td>
+                    <td className="fw-600">{p.nombre}</td>
+                    <td className="text-soft">${cost.toLocaleString()}</td>
+                    <td className="fw-700">${price.toLocaleString()}</td>
                     <td className="text-green">
                       +${margin.value.toLocaleString()}
                     </td>
@@ -260,67 +356,142 @@ const Products = () => {
         )}
       </div>
 
-      {/* --- MODAL NUEVO PRODUCTO --- */}
       {showProductModal && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Registrar Nuevo Producto</h3>
+              <h3>
+                {isEditMode ? "Editar Producto" : "Registrar Nuevo Producto"}
+              </h3>
               <button
                 className="btn-close-modal"
-                onClick={() => setShowProductModal(false)}
+                onClick={() => {
+                  setShowProductModal(false);
+                  resetProductForm();
+                }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="form-layout">
+            <form onSubmit={handleSubmitProduct} className="form-layout">
               <div className="form-group">
                 <label>Nombre del Producto *</label>
-                <input type="text" placeholder="Ej: Monitor LED 24p" required />
+                <input
+                  type="text"
+                  placeholder="Ej: Monitor LED 24p"
+                  value={productFormData.nombre}
+                  onChange={(e) =>
+                    setProductFormData({
+                      ...productFormData,
+                      nombre: e.target.value,
+                    })
+                  }
+                  required
+                />
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>SKU (Código) *</label>
-                  <input type="text" placeholder="PROD-XXXX" required />
+                  <input
+                    type="text"
+                    placeholder="PROD-XXXX"
+                    value={productFormData.sku}
+                    onChange={(e) =>
+                      setProductFormData({
+                        ...productFormData,
+                        sku: e.target.value,
+                      })
+                    }
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label>Categoría</label>
-                  <select>
-                    <option>Computación</option>
-                    <option>Mobiliario</option>
-                    <option>Accesorios</option>
+                  <select
+                    value={productFormData.categoria}
+                    onChange={(e) =>
+                      setProductFormData({
+                        ...productFormData,
+                        categoria: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Seleccionar...</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.nombre}>
+                        {c.nombre}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Precio Compra (Neto)</label>
-                  <input type="number" placeholder="0" min="0" />
+                  <label>Precio Compra (Costo)</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    value={productFormData.costo}
+                    onChange={(e) =>
+                      setProductFormData({
+                        ...productFormData,
+                        costo: e.target.value,
+                      })
+                    }
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Precio Venta (IVA inc.)</label>
-                  <input type="number" placeholder="0" min="0" required />
+                  <label>Precio Venta *</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    value={productFormData.precio}
+                    onChange={(e) =>
+                      setProductFormData({
+                        ...productFormData,
+                        precio: e.target.value,
+                      })
+                    }
+                    required
+                  />
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Stock Inicial</label>
-                <input type="number" placeholder="0" min="0" />
+                <input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={productFormData.stock}
+                  onChange={(e) =>
+                    setProductFormData({
+                      ...productFormData,
+                      stock: e.target.value,
+                    })
+                  }
+                />
               </div>
 
               <div className="modal-footer">
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={() => setShowProductModal(false)}
+                  onClick={() => {
+                    setShowProductModal(false);
+                    resetProductForm();
+                  }}
                 >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-solid">
-                  <Save size={18} /> Guardar Producto
+                  <Save size={18} />{" "}
+                  {isEditMode ? "Actualizar" : "Guardar Producto"}
                 </button>
               </div>
             </form>
@@ -328,7 +499,6 @@ const Products = () => {
         </div>
       )}
 
-      {/* --- MODAL NUEVA CATEGORÍA --- */}
       {showCategoryModal && (
         <div className="modal-overlay">
           <div className="modal-card" style={{ width: "400px" }}>
@@ -342,16 +512,34 @@ const Products = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="form-layout">
+            <form onSubmit={handleSubmitCategory} className="form-layout">
               <div className="form-group">
                 <label>Nombre Categoría</label>
-                <input type="text" required placeholder="Ej: Periféricos" />
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Periféricos"
+                  value={categoryFormData.nombre}
+                  onChange={(e) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      nombre: e.target.value,
+                    })
+                  }
+                />
               </div>
               <div className="form-group">
                 <label>Descripción</label>
                 <textarea
                   rows="3"
                   placeholder="Detalles de la categoría..."
+                  value={categoryFormData.descripcion}
+                  onChange={(e) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      descripcion: e.target.value,
+                    })
+                  }
                 ></textarea>
               </div>
 
@@ -364,7 +552,7 @@ const Products = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-solid">
-                  Crear Categoría
+                  <Save size={18} /> Crear Categoría
                 </button>
               </div>
             </form>

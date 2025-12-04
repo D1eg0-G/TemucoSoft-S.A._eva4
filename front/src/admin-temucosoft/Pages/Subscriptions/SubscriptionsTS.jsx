@@ -62,11 +62,24 @@ const SubscriptionsTS = () => {
         api.get("/planes/"),
         api.get("/empresas/"),
       ]);
-      setSubs(resSubs.data);
-      setPlanes(resPlanes.data);
-      setEmpresas(resEmpresas.data);
+
+      // --- DEBUG: Mira la consola del navegador (F12) para ver qué llega exactamente ---
+      console.log("Respuesta Planes:", resPlanes.data);
+      console.log("Respuesta Empresas:", resEmpresas.data);
+
+      // --- SOLUCIÓN: Verifica si viene en '.results' (paginado) o directo ---
+      const listaSubs = resSubs.data.results || resSubs.data;
+      const listaPlanes = resPlanes.data.results || resPlanes.data;
+      const listaEmpresas = resEmpresas.data.results || resEmpresas.data;
+
+      // Aseguramos que sea un array para evitar errores en el .map
+      setSubs(Array.isArray(listaSubs) ? listaSubs : []);
+      setPlanes(Array.isArray(listaPlanes) ? listaPlanes : []);
+      setEmpresas(Array.isArray(listaEmpresas) ? listaEmpresas : []);
+
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando datos:", err);
+      // Opcional: mostrar alerta si falla todo
     } finally {
       setLoading(false);
     }

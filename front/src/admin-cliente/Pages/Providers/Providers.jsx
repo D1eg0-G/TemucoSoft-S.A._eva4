@@ -8,13 +8,10 @@ import {
   MoreVertical,
   Phone,
   Mail,
-  MapPin,
   Building2,
   Edit,
   X,
   Save,
-  Power,
-  CheckCircle,
   Loader2,
 } from "lucide-react";
 
@@ -27,14 +24,16 @@ const Providers = () => {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ESTADO DE BÚSQUEDA (Agregado para dar funcionalidad al input)
+  const [searchTerm, setSearchTerm] = useState("");
+
   const initialFormState = {
     id: null,
-    nombre: "", // Django: nombre
-    rut: "", // Django: rut
-    email: "", // Django: email
-    telefono: "", // Django: telefono
-    contacto: "", // Django: contacto
-    // address: "", // Si tu backend tiene direccion, úsalo. Si no, quítalo.
+    nombre: "",
+    rut: "",
+    email: "",
+    telefono: "",
+    contacto: "",
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -73,7 +72,6 @@ const Providers = () => {
     }
   };
 
-  // --- Handlers UI ---
   const handleOpenCreate = () => {
     setFormData(initialFormState);
     setIsEditMode(false);
@@ -104,6 +102,13 @@ const Providers = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Lógica de Filtrado (Hace funcionar la barra de búsqueda)
+  const filteredProviders = providers.filter(
+    (prov) =>
+      prov.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      prov.rut.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading)
     return (
       <div
@@ -120,7 +125,13 @@ const Providers = () => {
         <div className="header-actions">
           <div className="search-box-prov">
             <Search size={18} />
-            <input type="text" placeholder="Buscar por nombre o RUT..." />
+            {/* Input conectado al estado */}
+            <input
+              type="text"
+              placeholder="Buscar por nombre o RUT..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <button className="btn-add-prov" onClick={handleOpenCreate}>
             <Plus size={18} /> Nuevo Proveedor
@@ -138,13 +149,13 @@ const Providers = () => {
         </div>
 
         <div className="prov-list-body" ref={menuRef}>
-          {providers.length === 0 && (
+          {filteredProviders.length === 0 && (
             <p style={{ textAlign: "center", padding: "20px" }}>
-              No hay proveedores registrados.
+              No hay proveedores registrados que coincidan.
             </p>
           )}
 
-          {providers.map((prov) => (
+          {filteredProviders.map((prov) => (
             <div key={prov.id} className="prov-row">
               <div className="col-name">
                 <div className="company-icon">
@@ -165,7 +176,6 @@ const Providers = () => {
                 <div className="info-item">
                   <Phone size={12} /> {prov.telefono}
                 </div>
-                {/* Si tienes dirección en backend, úsala aquí */}
               </div>
               <div className="col-status">
                 <span className="status-badge active">Activo</span>

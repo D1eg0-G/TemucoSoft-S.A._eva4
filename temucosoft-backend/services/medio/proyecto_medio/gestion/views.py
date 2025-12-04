@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, F
 from django.utils import timezone
 from .models import (
-    Usuario, Sucursal, Producto, Inventario, Caja,
+    Categoria, Usuario, Sucursal, Producto, Inventario, Caja, MovimientoCaja,
     Venta, Proveedor, Compra, PedidoInterno, MovimientoInventario
 )
 from .serializers import (
-    UsuarioSerializer, SucursalSerializer, ProductoSerializer, InventarioSerializer, CajaSerializer,
+    CategoriaSerializer, UsuarioSerializer, SucursalSerializer, ProductoSerializer, InventarioSerializer, CajaSerializer, MovimientoCajaSerializer,
     VentaSerializer, ProveedorSerializer, CompraSerializer, PedidoInternoSerializer, MovimientoInventarioSerializer
 )
 
@@ -16,9 +16,29 @@ from .serializers import (
 # VIEWSETS CRUD (Estándar)
 # ==============================================================================
 
+class CategoriaViewSet(viewsets.ModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+
+class MovimientoCajaViewSet(viewsets.ModelViewSet):
+    queryset = MovimientoCaja.objects.all()
+    serializer_class = MovimientoCajaSerializer
+
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+    
+    def perform_create(self, serializer):
+        """Validar roles permitidos según el plan antes de crear usuario"""
+        # Plan Estándar: permite admin_cliente, vendedor y gerente
+        # No hay restricciones de roles en este plan
+        serializer.save()
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        """Obtener datos del usuario autenticado"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 class SucursalViewSet(viewsets.ModelViewSet):
     queryset = Sucursal.objects.all()

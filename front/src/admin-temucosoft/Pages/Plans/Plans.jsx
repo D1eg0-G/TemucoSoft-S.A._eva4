@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../../../admin-cliente/config/api"; // Misma configuración de API
-import "./Plans.css"; // Estilos análogos
+import "./Plans.css";
 import {
   Plus,
   Layers,
@@ -17,18 +17,14 @@ import {
 const Plans = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
-
   // ESTADOS DE DATOS
   const [planes, setPlanes] = useState([]);
-
   // Estado para Menú Desplegable
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef();
-
   // Estado para Edición
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
   // Formulario (Coincide con modelo Plan de Django)
   const [formData, setFormData] = useState({
     nombre: "",
@@ -109,7 +105,6 @@ const Plans = () => {
       )
     )
       return;
-
     try {
       await api.delete(`/planes/${id}/`);
       alert("Plan eliminado");
@@ -122,7 +117,6 @@ const Plans = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-
     // Validar y parsear JSON antes de enviar
     let payload = { ...formData };
     try {
