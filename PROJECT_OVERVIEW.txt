@@ -1,0 +1,75 @@
+TemucoSoft ERP - Resumen del proyecto
+====================================
+
+Descripcion general
+-------------------
+SaaS ERP multi-tenant con planes Basico, Estandar y Premium. Autenticacion centralizada en el servicio Master y ruteo dinamico hacia APIs por plan. Cada plan tiene su propia base de datos PostgreSQL para aislamiento de datos.
+
+Arquitectura
+------------
+- Backend: 4 servicios Django/DRF
+  - Master (puerto 8000): autenticacion, gestion de empresas, planes y suscripciones.
+  - Basico (puerto 8001): funcionalidades core del plan basico.
+  - Medio (puerto 8002): funcionalidades adicionales del plan estandar.
+  - Premium (puerto 8003): funcionalidades avanzadas del plan premium.
+- Frontend: React + Vite con ruteo por rol (admin-cliente, admin-temucosoft) y proteccion de rutas.
+- Base de datos: PostgreSQL (una base por plan).
+- Comunicacion: Axios con interceptores y seleccion dinamica de baseURL segun plan.
+
+Autenticacion y ruteo
+---------------------
+- Login siempre contra Master (/api/master/login).
+- El front guarda token y plan en localStorage.
+- El interceptor Axios usa:
+  - Super-admin (correo contiene "temucosoft"): siempre Master (8000).
+  - Usuario de plan: API del plan (8001/8002/8003).
+
+Planes y modulos (cliente)
+---------------------------
+- Basico: dashboard, productos, inventario, venta (POS), caja.
+- Estandar: Basico + sucursales, proveedores, compras, ordenes.
+- Premium: Estandar + gestion de usuarios, suscripciones.
+
+Stack utilizado
+---------------
+Frontend
+- React 19, Vite 7.
+- React Router v7.
+- Axios (interceptores, baseURL dinamica).
+- UI: lucide-react (iconos), recharts (graficas).
+
+Backend
+- Django 5, Django REST Framework.
+- Autenticacion JWT con djangorestframework-simplejwt.
+- Validadores de datos por servicio (ej. RUT, telefonos, fechas, cantidades).
+
+Base de datos
+- PostgreSQL.
+
+Ejecucion
+---------
+Backend (desde raiz del repo):
+- bash start_servers.sh   # levanta Master 8000 + Basico 8001 + Medio 8002 + Premium 8003
+
+Frontend (desde front/):
+- npm install
+- npm run dev
+
+Variables de entorno frontend (front/.env)
+------------------------------------------
+VITE_API_MASTER_URL=http://localhost:8000/api/master
+VITE_API_BASICO_URL=http://localhost:8001/api
+VITE_API_ESTANDAR_URL=http://localhost:8002/api
+VITE_API_PREMIUM_URL=http://localhost:8003/api
+
+Estructura breve
+----------------
+- front/ : app React (admin-cliente y admin-temucosoft).
+- temucosoft-backend/services/ : Master + Basico + Medio + Premium.
+- start_servers.sh : arranque simultaneo de los 4 servicios.
+
+Futuros pasos sugeridos
+-----------------------
+- Dockerizar frontend y servicios.
+- CI/CD con GitHub Actions.
+- Monitoreo y logging centralizado.

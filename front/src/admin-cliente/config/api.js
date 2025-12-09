@@ -1,9 +1,10 @@
 import axios from "axios";
 
-// URL del servidor MASTER (para operaciones de super-admin)
-const MASTER_API = "http://localhost:8000/api/master";
+// Host del servidor MASTER (desde .env) y ruta completa
+const MASTER_API_HOST = import.meta.env.VITE_API_MASTER_URL;
+const MASTER_API = `${MASTER_API_HOST}/api/master`;
 
-// Creamos una instancia básica de Axios
+// Instancia básica de Axios
 const api = axios.create({
   headers: {
     "Content-Type": "application/json",
@@ -27,28 +28,12 @@ api.interceptors.request.use(
     if (!config.baseURL) {
       let apiUrl = MASTER_API; // Default: API Master
 
-      // Si hay un plan guardado (usuario cliente), usar su API
-      if (planStorage) {
-        try {
-          const planData = JSON.parse(planStorage);
-          const planApiUrl = planData?.config?.apiUrl;
-
-          if (planApiUrl) {
-            apiUrl = planApiUrl;
-          }
-        } catch (error) {
-          console.error("Error al leer plan en api.js", error);
-        }
-      }
-
-      // Si es super-admin, forzar uso del Master API
+      // Prioridad: si es super-admin, forzar Master
       if (userStorage) {
         try {
           const userData = JSON.parse(userStorage);
-          if (
-            userData.role === "super-admin" ||
-            userData.email?.includes("temucosoft")
-          ) {
+          const email = String(userData.email || "").toLowerCase();
+          if (userData.role === "super-admin" || email.includes("temucosoft")) {
             apiUrl = MASTER_API;
           }
         } catch (error) {
@@ -56,8 +41,32 @@ api.interceptors.request.use(
         }
       }
 
+      // Si hay un plan guardado (usuario cliente), usar su API
+      if (planStorage) {
+        try {
+          const planData = JSON.parse(planStorage);
+          const planName = planData?.plan || planData?.nombre || planData?.name;
+          const planApiUrl = planData?.config?.apiUrl;
+
+          const planConfig = {
+            basico: import.meta.env.VITE_API_BASICO_URL,
+            estandar: import.meta.env.VITE_API_ESTANDAR_URL,
+            medio: import.meta.env.VITE_API_ESTANDAR_URL,
+            premium: import.meta.env.VITE_API_PREMIUM_URL,
+          };
+
+          if (planApiUrl) {
+            apiUrl = planApiUrl;
+          } else if (planName && planConfig[planName]) {
+            apiUrl = planConfig[planName];
+          }
+        } catch (error) {
+          console.error("Error al leer plan en api.js", error);
+        }
+      }
+
       config.baseURL = apiUrl;
-      console.debug("🔧 API Request URL:", config.baseURL + config.url);
+      console.debug("🔧 API Request URL:", config.baseURL + (config.url || ""));
     }
 
     return config;
