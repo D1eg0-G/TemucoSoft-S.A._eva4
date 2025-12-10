@@ -75,7 +75,7 @@ const Users = () => {
     try {
       if (isEditMode) {
         // En edición, no enviamos password si está vacío
-        const payload = { ...formData, empresa_id: 1 };
+        const payload = { ...formData };
         if (!formData.password || formData.password === "") {
           delete payload.password;
         }
@@ -87,10 +87,8 @@ const Users = () => {
           alert("La contraseña es obligatoria para crear un usuario");
           return;
         }
-        await api.post("/usuarios/", {
-          ...formData,
-          empresa_id: 1,
-        });
+        // No enviamos empresa_id, el backend lo asigna automáticamente desde el usuario autenticado
+        await api.post("/usuarios/", formData);
         alert("Usuario creado exitosamente");
       }
       setShowModal(false);

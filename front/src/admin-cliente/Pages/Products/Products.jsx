@@ -67,16 +67,10 @@ const Products = () => {
     e.preventDefault();
     try {
       if (isEditMode) {
-        await api.put(`/productos/${editingId}/`, {
-          ...productFormData,
-          empresa_id: 1,
-        });
+        await api.put(`/productos/${editingId}/`, productFormData);
         alert("Producto actualizado");
       } else {
-        await api.post("/productos/", {
-          ...productFormData,
-          empresa_id: 1,
-        });
+        await api.post("/productos/", productFormData);
         alert("Producto creado");
       }
       setShowProductModal(false);
@@ -90,10 +84,7 @@ const Products = () => {
   const handleSubmitCategory = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/categorias/", {
-        ...categoryFormData,
-        empresa_id: 1,
-      });
+      await api.post("/categorias/", categoryFormData);
       alert("Categoría creada");
       setShowCategoryModal(false);
       setCategoryFormData({ nombre: "", descripcion: "" });

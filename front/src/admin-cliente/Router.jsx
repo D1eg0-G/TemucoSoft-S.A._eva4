@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Importación de Páginas
 import DashboardCliente from "./Pages/Dashboard/Dashboard";
 import Products from "./Pages/Products/Products";
+import Categories from "./Pages/Categories/Categories";
 import Branches from "./Pages/Branches/Branches";
 import Gestionuser from "./Pages/Gestion-user/Users";
 import Orders from "./Pages/Orders/Orders";
@@ -96,6 +97,16 @@ export default function ClienteRouter() {
           element={
             <ProtectedRoute requiredModule="products">
               <Products />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Categorías - Todos */}
+        <Route
+          path="Categories"
+          element={
+            <ProtectedRoute requiredModule="categories">
+              <Categories />
             </ProtectedRoute>
           }
         />

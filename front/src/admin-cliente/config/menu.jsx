@@ -10,6 +10,7 @@ import {
   Users,
   Wallet,
   File,
+  Tag,
 } from "lucide-react";
 
 const ROLES = {
@@ -53,6 +54,13 @@ export const menuCliente = [
     path: "Products",
     allowedRoles: [ROLES.ADMIN, ROLES.GERENTE],
     module: "products",
+  },
+  {
+    title: "Categorías",
+    icon: <Tag size={20} />,
+    path: "Categories",
+    allowedRoles: [ROLES.ADMIN, ROLES.GERENTE],
+    module: "categories",
   },
   {
     title: "Inventario",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Hook para navegación
-import api from "../../config/api"; 
+import api from "../../config/api";
 import "./Branches.css";
 import "/src/App.css";
 import {
@@ -55,16 +55,10 @@ const Branches = () => {
     e.preventDefault();
     try {
       if (isEditMode) {
-        await api.put(`/sucursales/${editingId}/`, {
-          ...formData,
-          empresa_id: 1,
-        });
+        await api.put(`/sucursales/${editingId}/`, formData);
         alert("Sucursal actualizada exitosamente");
       } else {
-        await api.post("/sucursales/", {
-          ...formData,
-          empresa_id: 1,
-        });
+        await api.post("/sucursales/", formData);
         alert("Sucursal creada exitosamente");
       }
       setShowModal(false);
@@ -238,7 +232,7 @@ const Branches = () => {
                 <Edit size={16} /> Editar
               </button>
               {/* Botón funcional de Ver Inventario */}
-              <button 
+              <button
                 className="action-btn-card inventory"
                 onClick={() => handleViewInventory(branch.id)}
               >

@@ -24,6 +24,9 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         return super().get_queryset().filter(empresa_id=empresa_id) if empresa_id is not None else super().get_queryset().none()
+    def perform_create(self, serializer):
+        empresa_id = getattr(self.request.user, 'empresa_id', None)
+        serializer.save(empresa_id=empresa_id)
 
 class MovimientoCajaViewSet(viewsets.ModelViewSet):
     queryset = MovimientoCaja.objects.all()
@@ -31,6 +34,9 @@ class MovimientoCajaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         return super().get_queryset().filter(empresa_id=empresa_id) if empresa_id is not None else super().get_queryset().none()
+    def perform_create(self, serializer):
+        empresa_id = getattr(self.request.user, 'empresa_id', None)
+        serializer.save(empresa_id=empresa_id)
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -68,6 +74,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         return super().get_queryset().filter(empresa_id=empresa_id) if empresa_id is not None else super().get_queryset().none()
+    def perform_create(self, serializer):
+        empresa_id = getattr(self.request.user, 'empresa_id', None)
+        serializer.save(empresa_id=empresa_id)
 
 class InventarioViewSet(viewsets.ModelViewSet):
     queryset = Inventario.objects.all()
@@ -78,6 +87,51 @@ class InventarioViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         serializer.save(empresa_id=empresa_id)
+    
+    @action(detail=True, methods=['post'], url_path='adjust')
+    def adjust(self, request, pk=None):
+        """
+        Ajustar stock de inventario manualmente.
+        POST /api/premium/inventario/{id}/adjust/
+        Body: {"cantidad": 10, "tipo": "entrada|salida", "motivo": "Ajuste por diferencia"}
+        """
+        inventario = self.get_object()
+        cantidad = request.data.get('cantidad')
+        tipo = request.data.get('tipo', 'entrada')
+        motivo = request.data.get('motivo', 'Ajuste manual')
+        
+        if cantidad is None:
+            return Response({"error": "Se requiere cantidad"}, status=400)
+        
+        try:
+            cantidad = int(cantidad)
+            if cantidad <= 0:
+                return Response({"error": "La cantidad debe ser positiva"}, status=400)
+        except ValueError:
+            return Response({"error": "Cantidad inválida"}, status=400)
+        
+        stock_anterior = inventario.stock
+        
+        if tipo == 'entrada':
+            inventario.stock += cantidad
+        elif tipo == 'salida':
+            if inventario.stock < cantidad:
+                return Response({
+                    "error": f"Stock insuficiente. Stock actual: {inventario.stock}"
+                }, status=400)
+            inventario.stock -= cantidad
+        else:
+            return Response({"error": "Tipo debe ser 'entrada' o 'salida'"}, status=400)
+        
+        inventario.save()
+        
+        return Response({
+            "message": f"Ajuste de inventario realizado: {tipo}",
+            "stock_anterior": stock_anterior,
+            "cantidad_ajustada": cantidad,
+            "stock_nuevo": inventario.stock,
+            "motivo": motivo
+        }, status=200)
 
 class CajaViewSet(viewsets.ModelViewSet):
     queryset = Caja.objects.all()
@@ -170,6 +224,169 @@ class CarritoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         serializer.save(empresa_id=empresa_id)
+    
+    @action(detail=True, methods=['post'], url_path='add')
+    def add_item(self, request, pk=None):
+        """
+        Agregar producto al carrito.
+        POST /api/premium/carrito/{id}/add/
+        Body: {"producto_id": 1, "cantidad": 2}
+        """
+        carrito = self.get_object()
+        producto_id = request.data.get('producto_id')
+        cantidad = request.data.get('cantidad', 1)
+        
+        if not producto_id:
+            return Response({"error": "Se requiere producto_id"}, status=400)
+        
+        try:
+            cantidad = int(cantidad)
+            if cantidad <= 0:
+                return Response({"error": "La cantidad debe ser positiva"}, status=400)
+        except ValueError:
+            return Response({"error": "Cantidad inválida"}, status=400)
+        
+        # Verificar que el producto existe y tiene stock
+        try:
+            producto = Producto.objects.get(id=producto_id, empresa_id=carrito.empresa_id)
+        except Producto.DoesNotExist:
+            return Response({"error": "Producto no encontrado"}, status=404)
+        
+        # Verificar stock disponible
+        inventario = Inventario.objects.filter(
+            producto_id=producto_id, 
+            empresa_id=carrito.empresa_id
+        ).first()
+        
+        if inventario and inventario.stock < cantidad:
+            return Response({
+                "error": f"Stock insuficiente. Disponible: {inventario.stock}"
+            }, status=400)
+        
+        # Verificar si el producto ya está en el carrito
+        carrito_item = CarritoItem.objects.filter(
+            carrito=carrito, 
+            producto_id=producto_id
+        ).first()
+        
+        if carrito_item:
+            # Actualizar cantidad
+            carrito_item.cantidad += cantidad
+            carrito_item.save()
+            message = "Cantidad actualizada en el carrito"
+        else:
+            # Crear nuevo item
+            carrito_item = CarritoItem.objects.create(
+                carrito=carrito,
+                producto_id=producto_id,
+                cantidad=cantidad
+            )
+            message = "Producto agregado al carrito"
+        
+        return Response({
+            "message": message,
+            "carrito": CarritoSerializer(carrito).data
+        }, status=200)
+    
+    @action(detail=True, methods=['post'], url_path='checkout')
+    def checkout(self, request, pk=None):
+        """
+        Procesar checkout del carrito y crear orden de e-commerce.
+        POST /api/premium/carrito/{id}/checkout/
+        Body: {"cliente_id": 1, "direccion_envio": "Calle 123", "metodo_pago": "tarjeta"}
+        """
+        from django.db import transaction
+        
+        carrito = self.get_object()
+        cliente_id = request.data.get('cliente_id')
+        direccion_envio = request.data.get('direccion_envio')
+        metodo_pago = request.data.get('metodo_pago', 'efectivo')
+        
+        # Validar que el carrito tiene items
+        items = CarritoItem.objects.filter(carrito=carrito)
+        if not items.exists():
+            return Response({"error": "El carrito está vacío"}, status=400)
+        
+        # Validar cliente
+        if cliente_id:
+            try:
+                cliente = ClienteFinal.objects.get(id=cliente_id, empresa_id=carrito.empresa_id)
+            except ClienteFinal.DoesNotExist:
+                return Response({"error": "Cliente no encontrado"}, status=404)
+        else:
+            cliente = None
+        
+        try:
+            with transaction.atomic():
+                # Calcular total y validar stock
+                total = 0
+                orden_items_data = []
+                
+                for item in items:
+                    try:
+                        producto = Producto.objects.get(
+                            id=item.producto_id, 
+                            empresa_id=carrito.empresa_id
+                        )
+                    except Producto.DoesNotExist:
+                        return Response({
+                            "error": f"Producto {item.producto_id} no encontrado"
+                        }, status=404)
+                    
+                    # Verificar stock
+                    inventario = Inventario.objects.filter(
+                        producto_id=item.producto_id,
+                        empresa_id=carrito.empresa_id
+                    ).first()
+                    
+                    if inventario and inventario.stock < item.cantidad:
+                        return Response({
+                            "error": f"Stock insuficiente para {producto.nombre}. Disponible: {inventario.stock}"
+                        }, status=400)
+                    
+                    # Reducir stock
+                    if inventario:
+                        inventario.stock -= item.cantidad
+                        inventario.save()
+                    
+                    subtotal = producto.precio * item.cantidad
+                    total += subtotal
+                    
+                    orden_items_data.append({
+                        'producto_id': item.producto_id,
+                        'cantidad': item.cantidad,
+                        'precio_unitario': producto.precio
+                    })
+                
+                # Crear orden de e-commerce
+                orden = OrdenEcommerce.objects.create(
+                    cliente=cliente,
+                    total=total,
+                    estado='pendiente',
+                    empresa_id=carrito.empresa_id
+                )
+                
+                # Crear items de la orden
+                for item_data in orden_items_data:
+                    OrdenItem.objects.create(
+                        orden=orden,
+                        **item_data
+                    )
+                
+                # Limpiar carrito
+                items.delete()
+                
+                return Response({
+                    "message": "Checkout realizado exitosamente",
+                    "orden_id": orden.id,
+                    "total": total,
+                    "estado": orden.estado
+                }, status=201)
+                
+        except Exception as e:
+            return Response({
+                "error": f"Error al procesar checkout: {str(e)}"
+            }, status=500)
 
 class ApiTokenViewSet(viewsets.ModelViewSet):
     queryset = ApiToken.objects.all()
@@ -177,6 +394,9 @@ class ApiTokenViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         empresa_id = getattr(self.request.user, 'empresa_id', None)
         return super().get_queryset().filter(empresa_id=empresa_id) if empresa_id is not None else super().get_queryset().none()
+    def perform_create(self, serializer):
+        empresa_id = getattr(self.request.user, 'empresa_id', None)
+        serializer.save(empresa_id=empresa_id)
 
 class LogApiViewSet(viewsets.ModelViewSet):
     queryset = LogApi.objects.all()

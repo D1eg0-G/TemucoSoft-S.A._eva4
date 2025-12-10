@@ -4,12 +4,16 @@ from .models import Categoria, Producto, Venta, VentaItem, Sucursal, Usuario, In
 
 # --- CATEGORÍAS ---
 class CategoriaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Categoria
         fields = '__all__'
 
 # --- CAJA Y MOVIMIENTOS ---
 class MovimientoCajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = MovimientoCaja
         fields = '__all__'
@@ -18,20 +22,56 @@ class MovimientoCajaSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password']
-        extra_kwargs = {'password': {'write_only': True}} # Ocultar password al leer
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password', 'is_active', 'empresa_id']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'empresa_id': {'required': False}
+        }
 
     def create(self, validated_data):
+        # Extraer empresa_id si viene en validated_data
+        empresa_id = validated_data.pop('empresa_id', None)
+        
+        # Crear usuario con create_user para hashear password
         user = Usuario.objects.create_user(**validated_data)
+        
+        # Asignar empresa_id después de crear
+        if empresa_id is not None:
+            user.empresa_id = empresa_id
+            user.activo = validated_data.get('is_active', True)
+            user.save()
+        
         return user
+    
+    def update(self, instance, validated_data):
+        # Si viene password, actualizarla con hash
+        password = validated_data.pop('password', None)
+        
+        # Actualizar campos normales
+        for attr, value in validated_data.items():
+            if attr == 'is_active':
+                instance.activo = value
+            else:
+                setattr(instance, attr, value)
+        
+        # Si hay nueva password, hashearla
+        if password:
+            instance.set_password(password)
+        
+        instance.save()
+        return instance
 
 class SucursalSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Sucursal
         fields = '__all__'
 
 # --- PRODUCTOS E INVENTARIO ---
 class ProductoSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Producto
         fields = '__all__'
@@ -42,10 +82,13 @@ class InventarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Inventario
-        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden']
+        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
 # --- CAJA ---
 class CajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Caja
         fields = '__all__'
@@ -63,7 +106,8 @@ class VentaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Venta
-        fields = ['id', 'sucursal', 'usuario', 'total', 'metodo_pago', 'fecha', 'items']
+        fields = ['id', 'sucursal', 'usuario', 'total', 'metodo_pago', 'fecha', 'items', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

@@ -31,7 +31,7 @@ const Purchases = () => {
   // FORMULARIO
   const [newPurchase, setNewPurchase] = useState({
     proveedor: "",
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: new Date().toISOString().split("T")[0],
     estado: "pendiente",
     items: [],
   });
@@ -70,13 +70,17 @@ const Purchases = () => {
 
   // AGREGAR ITEM AL LISTADO
   const handleAddItem = () => {
-    if (!tempItem.producto || tempItem.cantidad <= 0 || tempItem.costo_unitario <= 0) {
+    if (
+      !tempItem.producto ||
+      tempItem.cantidad <= 0 ||
+      tempItem.costo_unitario <= 0
+    ) {
       alert("Complete todos los campos del producto");
       return;
     }
 
-    const producto = products.find(p => p.id === parseInt(tempItem.producto));
-    
+    const producto = products.find((p) => p.id === parseInt(tempItem.producto));
+
     setNewPurchase({
       ...newPurchase,
       items: [
@@ -86,8 +90,8 @@ const Purchases = () => {
           producto_nombre: producto?.nombre || "",
           cantidad: parseInt(tempItem.cantidad),
           costo_unitario: parseFloat(tempItem.costo_unitario),
-        }
-      ]
+        },
+      ],
     });
 
     // Reset temp item
@@ -102,29 +106,29 @@ const Purchases = () => {
   const handleRemoveItem = (index) => {
     setNewPurchase({
       ...newPurchase,
-      items: newPurchase.items.filter((_, i) => i !== index)
+      items: newPurchase.items.filter((_, i) => i !== index),
     });
   };
 
   // GUARDAR COMPRA
   const handleSave = async (e) => {
     e.preventDefault();
-    
+
     if (newPurchase.items.length === 0) {
       alert("Debe agregar al menos un producto a la compra");
       return;
     }
 
     // Calcular total
-    const total = newPurchase.items.reduce((sum, item) => 
-      sum + (item.cantidad * item.costo_unitario), 0
+    const total = newPurchase.items.reduce(
+      (sum, item) => sum + item.cantidad * item.costo_unitario,
+      0
     );
 
     try {
       await api.post("/compras/", {
         ...newPurchase,
         total: total,
-        empresa_id: 1,
       });
       alert("Compra registrada exitosamente");
       setShowModal(false);
@@ -134,14 +138,16 @@ const Purchases = () => {
       setPurchases(res.data);
     } catch (err) {
       console.error("Error al guardar:", err);
-      alert("Error al registrar compra: " + (err.response?.data?.detail || "Error"));
+      alert(
+        "Error al registrar compra: " + (err.response?.data?.detail || "Error")
+      );
     }
   };
 
   const resetForm = () => {
     setNewPurchase({
       proveedor: "",
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: new Date().toISOString().split("T")[0],
       estado: "pendiente",
       items: [],
     });
@@ -175,31 +181,41 @@ const Purchases = () => {
   const handleExport = () => {
     const csvData = [
       ["ID", "Fecha", "Proveedor", "Total", "Estado"],
-      ...purchases.map(p => [
+      ...purchases.map((p) => [
         p.id,
         new Date(p.fecha).toLocaleDateString(),
         p.proveedor_nombre,
         p.total,
-        p.estado
-      ])
-    ].map(row => row.join(",")).join("\n");
-    
+        p.estado,
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
+
     const blob = new Blob([csvData], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `compras_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `compras_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
   };
 
-  const filteredPurchases = purchases.filter(p =>
-    p.proveedor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.toString().includes(searchTerm)
+  const filteredPurchases = purchases.filter(
+    (p) =>
+      p.proveedor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.id.toString().includes(searchTerm)
   );
 
-  const totalGastos = purchases.reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
-  const totalPendientes = purchases.filter(p => p.estado === "pendiente").length;
-  const totalRecibidos = purchases.filter(p => p.estado === "recibido").length;
+  const totalGastos = purchases.reduce(
+    (sum, p) => sum + parseFloat(p.total || 0),
+    0
+  );
+  const totalPendientes = purchases.filter(
+    (p) => p.estado === "pendiente"
+  ).length;
+  const totalRecibidos = purchases.filter(
+    (p) => p.estado === "recibido"
+  ).length;
 
   if (loading)
     return (
@@ -221,9 +237,7 @@ const Purchases = () => {
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Compras</span>
-            <h3 className="stat-value">
-              ${totalGastos.toLocaleString()}
-            </h3>
+            <h3 className="stat-value">${totalGastos.toLocaleString()}</h3>
           </div>
         </div>
         <div className="stat-card orange">
@@ -310,7 +324,9 @@ const Purchases = () => {
                 <select
                   className={`status-select ${getStatusClass(purchase.estado)}`}
                   value={purchase.estado}
-                  onChange={(e) => handleChangeStatus(purchase.id, e.target.value)}
+                  onChange={(e) =>
+                    handleChangeStatus(purchase.id, e.target.value)
+                  }
                   onClick={(e) => e.stopPropagation()}
                 >
                   <option value="pendiente">Pendiente</option>
@@ -319,7 +335,10 @@ const Purchases = () => {
                 </select>
               </div>
               <div className="col-action">
-                <button className="btn-expand" onClick={() => toggleRow(purchase.id)}>
+                <button
+                  className="btn-expand"
+                  onClick={() => toggleRow(purchase.id)}
+                >
                   {expandedRowId === purchase.id ? (
                     <ChevronUp size={20} />
                   ) : (
@@ -328,7 +347,7 @@ const Purchases = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Detalles (Items) */}
             {expandedRowId === purchase.id && (
               <div className="purchase-details-panel">
@@ -340,19 +359,27 @@ const Purchases = () => {
                     <span className="d-cost">Costo U.</span>
                     <span className="d-subtotal">Subtotal</span>
                   </div>
-                  {purchase.items && purchase.items.map((item, idx) => (
-                    <div key={idx} className="d-item-row">
-                      <span className="d-prod">{item.producto_nombre}</span>
-                      <span className="d-qty">{item.cantidad}</span>
-                      <span className="d-cost">${parseFloat(item.costo_unitario).toLocaleString()}</span>
-                      <span className="d-subtotal">
-                        ${(item.cantidad * item.costo_unitario).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                  {purchase.items &&
+                    purchase.items.map((item, idx) => (
+                      <div key={idx} className="d-item-row">
+                        <span className="d-prod">{item.producto_nombre}</span>
+                        <span className="d-qty">{item.cantidad}</span>
+                        <span className="d-cost">
+                          ${parseFloat(item.costo_unitario).toLocaleString()}
+                        </span>
+                        <span className="d-subtotal">
+                          $
+                          {(
+                            item.cantidad * item.costo_unitario
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
                   <div className="details-total">
                     <strong>Total:</strong>
-                    <strong>${parseFloat(purchase.total).toLocaleString()}</strong>
+                    <strong>
+                      ${parseFloat(purchase.total).toLocaleString()}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -384,7 +411,10 @@ const Purchases = () => {
                   <select
                     value={newPurchase.proveedor}
                     onChange={(e) =>
-                      setNewPurchase({ ...newPurchase, proveedor: e.target.value })
+                      setNewPurchase({
+                        ...newPurchase,
+                        proveedor: e.target.value,
+                      })
                     }
                     required
                   >
@@ -410,14 +440,16 @@ const Purchases = () => {
               </div>
 
               <hr style={{ margin: "20px 0", border: "1px solid #e2e8f0" }} />
-              
+
               <h4>Agregar Productos</h4>
               <div className="form-row" style={{ alignItems: "flex-end" }}>
                 <div className="form-group" style={{ flex: 2 }}>
                   <label>Producto</label>
                   <select
                     value={tempItem.producto}
-                    onChange={(e) => setTempItem({ ...tempItem, producto: e.target.value })}
+                    onChange={(e) =>
+                      setTempItem({ ...tempItem, producto: e.target.value })
+                    }
                   >
                     <option value="">Seleccionar...</option>
                     {products.map((p) => (
@@ -433,7 +465,9 @@ const Purchases = () => {
                     type="number"
                     min="1"
                     value={tempItem.cantidad}
-                    onChange={(e) => setTempItem({ ...tempItem, cantidad: e.target.value })}
+                    onChange={(e) =>
+                      setTempItem({ ...tempItem, cantidad: e.target.value })
+                    }
                   />
                 </div>
                 <div className="form-group">
@@ -443,10 +477,19 @@ const Purchases = () => {
                     min="0"
                     step="0.01"
                     value={tempItem.costo_unitario}
-                    onChange={(e) => setTempItem({ ...tempItem, costo_unitario: e.target.value })}
+                    onChange={(e) =>
+                      setTempItem({
+                        ...tempItem,
+                        costo_unitario: e.target.value,
+                      })
+                    }
                   />
                 </div>
-                <button type="button" className="btn-secondary" onClick={handleAddItem}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleAddItem}
+                >
                   <Plus size={16} /> Agregar
                 </button>
               </div>
@@ -458,23 +501,47 @@ const Purchases = () => {
                   <table style={{ width: "100%", marginTop: "10px" }}>
                     <thead>
                       <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Producto</th>
-                        <th style={{ textAlign: "center", padding: "8px" }}>Cant.</th>
-                        <th style={{ textAlign: "right", padding: "8px" }}>Costo U.</th>
-                        <th style={{ textAlign: "right", padding: "8px" }}>Subtotal</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Producto
+                        </th>
+                        <th style={{ textAlign: "center", padding: "8px" }}>
+                          Cant.
+                        </th>
+                        <th style={{ textAlign: "right", padding: "8px" }}>
+                          Costo U.
+                        </th>
+                        <th style={{ textAlign: "right", padding: "8px" }}>
+                          Subtotal
+                        </th>
                         <th style={{ width: "50px" }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {newPurchase.items.map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: "8px" }}>{item.producto_nombre}</td>
-                          <td style={{ textAlign: "center", padding: "8px" }}>{item.cantidad}</td>
+                        <tr
+                          key={idx}
+                          style={{ borderBottom: "1px solid #f1f5f9" }}
+                        >
+                          <td style={{ padding: "8px" }}>
+                            {item.producto_nombre}
+                          </td>
+                          <td style={{ textAlign: "center", padding: "8px" }}>
+                            {item.cantidad}
+                          </td>
                           <td style={{ textAlign: "right", padding: "8px" }}>
                             ${parseFloat(item.costo_unitario).toLocaleString()}
                           </td>
-                          <td style={{ textAlign: "right", padding: "8px", fontWeight: "bold" }}>
-                            ${(item.cantidad * item.costo_unitario).toLocaleString()}
+                          <td
+                            style={{
+                              textAlign: "right",
+                              padding: "8px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            $
+                            {(
+                              item.cantidad * item.costo_unitario
+                            ).toLocaleString()}
                           </td>
                           <td style={{ textAlign: "center" }}>
                             <button
@@ -485,7 +552,7 @@ const Purchases = () => {
                                 border: "none",
                                 color: "#ef4444",
                                 cursor: "pointer",
-                                padding: "4px"
+                                padding: "4px",
                               }}
                             >
                               <Trash2 size={16} />
@@ -496,13 +563,32 @@ const Purchases = () => {
                     </tbody>
                     <tfoot>
                       <tr style={{ borderTop: "2px solid #0e3c66" }}>
-                        <td colSpan="3" style={{ textAlign: "right", padding: "12px", fontWeight: "bold" }}>
+                        <td
+                          colSpan="3"
+                          style={{
+                            textAlign: "right",
+                            padding: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
                           TOTAL:
                         </td>
-                        <td style={{ textAlign: "right", padding: "12px", fontWeight: "bold", fontSize: "18px" }}>
-                          ${newPurchase.items.reduce((sum, item) => 
-                            sum + (item.cantidad * item.costo_unitario), 0
-                          ).toLocaleString()}
+                        <td
+                          style={{
+                            textAlign: "right",
+                            padding: "12px",
+                            fontWeight: "bold",
+                            fontSize: "18px",
+                          }}
+                        >
+                          $
+                          {newPurchase.items
+                            .reduce(
+                              (sum, item) =>
+                                sum + item.cantidad * item.costo_unitario,
+                              0
+                            )
+                            .toLocaleString()}
                         </td>
                         <td></td>
                       </tr>

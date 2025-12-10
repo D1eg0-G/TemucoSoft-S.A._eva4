@@ -14,6 +14,8 @@ from .models import (
 # =========================================================
 
 class CategoriaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Categoria
         fields = '__all__'
@@ -23,6 +25,8 @@ class CategoriaSerializer(serializers.ModelSerializer):
 # =========================================================
 
 class MovimientoCajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = MovimientoCaja
         fields = '__all__'
@@ -34,18 +38,55 @@ class MovimientoCajaSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password', 'is_active', 'empresa_id']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'empresa_id': {'required': False}
+        }
 
     def create(self, validated_data):
-        return Usuario.objects.create_user(**validated_data)
+        # Extraer empresa_id si viene en validated_data
+        empresa_id = validated_data.pop('empresa_id', None)
+        
+        # Crear usuario con create_user para hashear password
+        user = Usuario.objects.create_user(**validated_data)
+        
+        # Asignar empresa_id después de crear
+        if empresa_id is not None:
+            user.empresa_id = empresa_id
+            user.activo = validated_data.get('is_active', True)
+            user.save()
+        
+        return user
+    
+    def update(self, instance, validated_data):
+        # Si viene password, actualizarla con hash
+        password = validated_data.pop('password', None)
+        
+        # Actualizar campos normales
+        for attr, value in validated_data.items():
+            if attr == 'is_active':
+                instance.activo = value
+            else:
+                setattr(instance, attr, value)
+        
+        # Si hay nueva password, hashearla
+        if password:
+            instance.set_password(password)
+        
+        instance.save()
+        return instance
 
 class SucursalSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Sucursal
         fields = '__all__'
 
 class ProductoSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Producto
         fields = '__all__'
@@ -56,9 +97,12 @@ class InventarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Inventario
-        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden']
+        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
 class CajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Caja
         fields = '__all__'
@@ -75,7 +119,8 @@ class VentaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Venta
-        fields = ['id', 'sucursal', 'usuario', 'total', 'metodo_pago', 'fecha', 'items']
+        fields = ['id', 'sucursal', 'usuario', 'total', 'metodo_pago', 'fecha', 'items', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -119,6 +164,8 @@ class VentaSerializer(serializers.ModelSerializer):
 # =========================================================
 
 class ProveedorSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Proveedor
         fields = '__all__'
@@ -136,7 +183,8 @@ class CompraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Compra
-        fields = ['id', 'proveedor', 'proveedor_nombre', 'sucursal', 'total', 'fecha', 'estado', 'items']
+        fields = ['id', 'proveedor', 'proveedor_nombre', 'sucursal', 'total', 'fecha', 'estado', 'items', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -175,18 +223,9 @@ class CompraSerializer(serializers.ModelSerializer):
                 
         return compra
 
-    class Meta:
-        model = Compra
-        fields = ['id', 'proveedor', 'proveedor_nombre', 'sucursal', 'total', 'fecha', 'estado', 'items']
-
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        compra = Compra.objects.create(**validated_data)
-        for item_data in items_data:
-            CompraItem.objects.create(compra=compra, **item_data)
-        return compra
-
 class PedidoInternoSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = PedidoInterno
         fields = '__all__'
@@ -206,7 +245,10 @@ class ClienteFinalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClienteFinal
         fields = ['id', 'nombre', 'email', 'telefono', 'direccion', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'empresa_id': {'required': False}
+        }
 
 # --- E-COMMERCE ---
 class OrdenItemSerializer(serializers.ModelSerializer):
@@ -224,6 +266,7 @@ class OrdenEcommerceSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdenEcommerce
         fields = ['id', 'cliente', 'cliente_nombre', 'total', 'estado', 'fecha', 'direccion_envio', 'items']
+        extra_kwargs = {'empresa_id': {'required': False}}
     
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -271,6 +314,7 @@ class CarritoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carrito
         fields = ['id', 'cliente', 'session_id', 'creado', 'items']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
 # --- API INTEGRACIONES ---
 class ApiTokenSerializer(serializers.ModelSerializer):
@@ -278,6 +322,7 @@ class ApiTokenSerializer(serializers.ModelSerializer):
         model = ApiToken
         fields = ['token', 'activo', 'expira', 'creado']
         read_only_fields = ['token', 'creado']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
 class LogApiSerializer(serializers.ModelSerializer):
     class Meta:

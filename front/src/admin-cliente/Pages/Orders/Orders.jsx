@@ -97,7 +97,6 @@ const Orders = () => {
     try {
       await api.post("/pedidos-internos/", {
         ...formData,
-        empresa_id: 1,
         estado: "pendiente",
         total: 0, // Calcular según necesidad
       });

@@ -62,7 +62,7 @@ const Providers = () => {
         await api.put(`/proveedores/${formData.id}/`, formData);
         alert("Proveedor actualizado");
       } else {
-        await api.post("/proveedores/", { ...formData, empresa_id: 1 });
+        await api.post("/proveedores/", formData);
         alert("Proveedor creado");
       }
       setIsModalOpen(false);

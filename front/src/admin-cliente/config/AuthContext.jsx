@@ -8,7 +8,14 @@ const PLAN_CONFIG = {
   basico: {
     name: "Plan Básico",
     apiUrl: import.meta.env.VITE_API_BASICO_URL,
-    modules: ["dashboard", "products", "inventory", "sale", "cashregister"],
+    modules: [
+      "dashboard",
+      "products",
+      "categories",
+      "inventory",
+      "sale",
+      "cashregister",
+    ],
   },
   estandar: {
     name: "Plan Estándar",
@@ -16,6 +23,7 @@ const PLAN_CONFIG = {
     modules: [
       "dashboard",
       "products",
+      "categories",
       "inventory",
       "sale",
       "cashregister",
@@ -32,6 +40,7 @@ const PLAN_CONFIG = {
     modules: [
       "dashboard",
       "products",
+      "categories",
       "inventory",
       "sale",
       "cashregister",

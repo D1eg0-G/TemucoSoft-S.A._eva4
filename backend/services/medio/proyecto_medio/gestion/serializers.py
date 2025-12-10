@@ -8,12 +8,16 @@ from .models import (
 
 # --- CATEGORÍAS ---
 class CategoriaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Categoria
         fields = '__all__'
 
 # --- CAJA Y MOVIMIENTOS ---
 class MovimientoCajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = MovimientoCaja
         fields = '__all__'
@@ -22,20 +26,56 @@ class MovimientoCajaSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password']
-        extra_kwargs = {'password': {'write_only': True}} # Ocultar password al leer
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'rut', 'password', 'is_active', 'empresa_id']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'empresa_id': {'required': False}
+        }
 
     def create(self, validated_data):
+        # Extraer empresa_id si viene en validated_data
+        empresa_id = validated_data.pop('empresa_id', None)
+        
+        # Crear usuario con create_user para hashear password
         user = Usuario.objects.create_user(**validated_data)
+        
+        # Asignar empresa_id después de crear
+        if empresa_id is not None:
+            user.empresa_id = empresa_id
+            user.activo = validated_data.get('is_active', True)
+            user.save()
+        
         return user
+    
+    def update(self, instance, validated_data):
+        # Si viene password, actualizarla con hash
+        password = validated_data.pop('password', None)
+        
+        # Actualizar campos normales
+        for attr, value in validated_data.items():
+            if attr == 'is_active':
+                instance.activo = value
+            else:
+                setattr(instance, attr, value)
+        
+        # Si hay nueva password, hashearla
+        if password:
+            instance.set_password(password)
+        
+        instance.save()
+        return instance
 
 class SucursalSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Sucursal
         fields = '__all__'
 
 # --- PRODUCTOS E INVENTARIO ---
 class ProductoSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Producto
         fields = '__all__'
@@ -46,10 +86,13 @@ class InventarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Inventario
-        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden']
+        fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'sucursal_nombre', 'stock', 'punto_reorden', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
 # --- CAJA ---
 class CajaSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Caja
         fields = '__all__'
@@ -68,7 +111,8 @@ class VentaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Venta
-        fields = ['id', 'sucursal', 'usuario', 'vendedor_nombre', 'total', 'metodo_pago', 'fecha', 'items']
+        fields = ['id', 'sucursal', 'usuario', 'vendedor_nombre', 'total', 'metodo_pago', 'fecha', 'items', 'empresa_id']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
     def create(self, validated_data):
         """Transaction atomic para guardar venta e items"""
@@ -78,27 +122,11 @@ class VentaSerializer(serializers.ModelSerializer):
             VentaItem.objects.create(venta=venta, **item_data)
         return venta
 
-class UsuarioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Usuario
-        fields = ['id', 'username', 'role', 'rut', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
-    def create(self, validated_data):
-        return Usuario.objects.create_user(**validated_data)
-
-class SucursalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Sucursal
-        fields = '__all__'
-
-class ProductoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Producto
-        fields = '__all__'
-
 # --- NUEVO EN PLAN MEDIO ---
 
 class ProveedorSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = Proveedor
         fields = '__all__'
@@ -116,6 +144,7 @@ class CompraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Compra
         fields = ['id', 'proveedor', 'proveedor_nombre', 'sucursal', 'total', 'fecha', 'estado', 'items']
+        extra_kwargs = {'empresa_id': {'required': False}}
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -155,6 +184,8 @@ class CompraSerializer(serializers.ModelSerializer):
         return compra
 
 class PedidoInternoSerializer(serializers.ModelSerializer):
+    empresa_id = serializers.IntegerField(required=False, allow_null=False)
+    
     class Meta:
         model = PedidoInterno
         fields = '__all__'
@@ -164,53 +195,3 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovimientoInventario
         fields = ['id', 'producto', 'producto_nombre', 'sucursal', 'tipo', 'cantidad', 'fecha', 'referencia']
-
-# --- VENTA (IGUAL QUE BÁSICO) ---
-class VentaItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VentaItem
-        fields = ['producto', 'cantidad', 'precio_unitario']
-
-class VentaSerializer(serializers.ModelSerializer):
-    items = VentaItemSerializer(many=True)
-    
-    class Meta:
-        model = Venta
-        fields = ['id', 'sucursal', 'usuario', 'total', 'metodo_pago', 'fecha', 'items']
-
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        
-        with transaction.atomic():
-            venta = Venta.objects.create(**validated_data)
-            
-            for item_data in items_data:
-                producto = item_data['producto']
-                cantidad = item_data['cantidad']
-                sucursal = venta.sucursal
-                
-                try:
-                    inventario = Inventario.objects.get(producto=producto, sucursal=sucursal)
-                except Inventario.DoesNotExist:
-                    raise serializers.ValidationError(f"No hay inventario para {producto.nombre}")
-
-                if inventario.stock < cantidad:
-                    raise serializers.ValidationError(f"Stock insuficiente para {producto.nombre}")
-                
-                # Restar Stock
-                inventario.stock -= cantidad
-                inventario.save()
-
-                # Registrar Movimiento de Salida
-                MovimientoInventario.objects.create(
-                    producto=producto,
-                    sucursal=sucursal,
-                    tipo='salida',
-                    cantidad=cantidad,
-                    referencia=f"Venta #{venta.id}",
-                    empresa_id=venta.empresa_id
-                )
-                
-                VentaItem.objects.create(venta=venta, **item_data)
-                
-        return venta
