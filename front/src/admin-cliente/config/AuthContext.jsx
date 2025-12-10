@@ -46,9 +46,20 @@ const PLAN_CONFIG = {
   },
 };
 
-// URL del Master (Puerto 8000)
-const MASTER_API =
-  import.meta.env.VITE_API_MASTER_URL || "http://localhost:8000";
+// URL completa del Master API. Preferido: http://localhost:8000/api/master
+let MASTER_API =
+  import.meta.env.VITE_API_MASTER_URL || "http://localhost:8000/api/master";
+// Normalización para asegurar que termine en /api/master
+try {
+  const lower = MASTER_API.toLowerCase();
+  const hasMaster = lower.includes("/api/master");
+  if (!hasMaster) {
+    MASTER_API =
+      lower.endsWith("/api") || lower.includes("/api/")
+        ? MASTER_API.replace(/\/api\/?$/, "/api/master")
+        : MASTER_API.replace(/\/?$/, "/api/master");
+  }
+} catch {}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -87,11 +98,10 @@ export const AuthProvider = ({ children }) => {
 
       // 1. ROUTING: Preguntar al Master dónde está este usuario
       // Limpiamos la URL por si tiene doble slash //
-      const routingEndpoint =
-        `${MASTER_API}/api/master/empresas/login-router/`.replace(
-          /([^:]\/)\/+/g,
-          "$1"
-        );
+      const routingEndpoint = `${MASTER_API}/empresas/login-router/`.replace(
+        /([^:]\/)\/+/g,
+        "$1"
+      );
 
       const routingRes = await axios.post(routingEndpoint, { email, password });
 
@@ -164,13 +174,13 @@ export const AuthProvider = ({ children }) => {
       const planData = {
         tipo: planTipo,
         modulos,
-        // Si es super admin, creamos config al vuelo. Si es cliente, usamos instance_url del backend
+        // Para super-admin, forzar siempre el MASTER_API como apiUrl
         config:
           planTipo === "super-admin"
-            ? { name: "Super Admin", apiUrl: instance_url }
+            ? { name: "Super Admin", apiUrl: MASTER_API, modules: ["all"] }
             : {
                 name: PLAN_CONFIG[planTipo]?.name || planTipo,
-                apiUrl: instance_url, // Usar instance_url del backend
+                apiUrl: instance_url, // Usar instance_url del backend del plan
                 modules: PLAN_CONFIG[planTipo]?.modules || modulos,
               },
       };

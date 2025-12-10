@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../../admin-cliente/config/api"; // Conexión API
 import "./ClientAdmins.css";
 import "/src/App.css";
@@ -20,6 +21,8 @@ import {
 } from "lucide-react";
 
 const ClientAdmins = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [admins, setAdmins] = useState([]);
@@ -81,6 +84,19 @@ const ClientAdmins = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Si venimos desde Suscripciones, abrir modal y preseleccionar empresa
+  useEffect(() => {
+    const empresaId = location.state?.empresaId;
+    if (empresaId) {
+      setShowModal(true);
+      setIsEditMode(false);
+      setFormData((prev) => ({
+        ...prev,
+        empresa_id: String(empresaId),
+      }));
+    }
+  }, [location.state]);
 
   const handleSave = async (e) => {
     e.preventDefault();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../../admin-cliente/config/api"; // Ruta ajustada
 import "./SubscriptionsTS.css";
 import {
@@ -18,6 +19,8 @@ import {
 } from "lucide-react";
 
 const SubscriptionsTS = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +79,6 @@ const SubscriptionsTS = () => {
       setSubs(Array.isArray(listaSubs) ? listaSubs : []);
       setPlanes(Array.isArray(listaPlanes) ? listaPlanes : []);
       setEmpresas(Array.isArray(listaEmpresas) ? listaEmpresas : []);
-
     } catch (err) {
       console.error("Error cargando datos:", err);
       // Opcional: mostrar alerta si falla todo
@@ -88,6 +90,19 @@ const SubscriptionsTS = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Si venimos desde creación de empresa, preseleccionar esa empresa
+  useEffect(() => {
+    const empresaId = location.state?.empresaId;
+    if (empresaId) {
+      setShowModal(true);
+      setIsEditMode(false);
+      setFormData((prev) => ({
+        ...prev,
+        empresa: String(empresaId),
+      }));
+    }
+  }, [location.state]);
 
   // --- MANEJADORES DE ACCIONES ---
 
@@ -145,7 +160,7 @@ const SubscriptionsTS = () => {
         await api.put(`/suscripciones/${editingId}/`, formData);
         alert("Suscripción actualizada");
       } else {
-        await api.post("/suscripciones/", formData);
+        const res = await api.post("/suscripciones/", formData);
         alert("Suscripción creada");
       }
       setShowModal(false);

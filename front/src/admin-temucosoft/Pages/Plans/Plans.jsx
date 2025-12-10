@@ -31,7 +31,7 @@ const Plans = () => {
     precio_mensual: "",
     max_sucursales: 1,
     max_usuarios: 1,
-    host_base_url: "http://localhost:8001", // Default para desarrollo
+    host_base_url: "http://localhost:8001/api", // Default para desarrollo
     modulos_json: '["dashboard", "sale"]', // Default stringified JSON
   });
 
@@ -70,8 +70,9 @@ const Plans = () => {
       precio_mensual: "",
       max_sucursales: 1,
       max_usuarios: 5,
-      host_base_url: "http://localhost:800X/api/plan",
-      modulos_json: '["dashboard", "products", "inventory", "sale"]',
+      host_base_url: "http://localhost:8001/api",
+      modulos_json:
+        '["dashboard", "products", "inventory", "sale", "cashregister"]',
     });
     setIsEditMode(false);
     setShowModal(true);
@@ -126,6 +127,12 @@ const Plans = () => {
         "Error en el formato de Módulos JSON. Asegúrate de usar comillas dobles."
       );
       return;
+    }
+
+    // Normalizar nombre para cumplir con choices del backend
+    // Ej.: "Plan Basico " -> "basico"
+    if (payload.nombre) {
+      payload.nombre = String(payload.nombre).trim().toLowerCase();
     }
 
     try {
@@ -322,7 +329,7 @@ const Plans = () => {
                     setFormData({ ...formData, host_base_url: e.target.value })
                   }
                   required
-                  placeholder="http://localhost:8001/api/basico"
+                  placeholder="http://localhost:8001/api"
                 />
                 <small style={{ color: "#64748b", fontSize: "11px" }}>
                   Dirección del servidor donde reside la BD de este plan.

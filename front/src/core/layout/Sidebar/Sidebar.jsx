@@ -166,26 +166,29 @@ const Sidebar = ({
               )}
             </a>
 
-            {/* Submenu Suscripción */}
-            {!isCollapsed && isSettingsOpen && hasModule("subscription") && (
-              <div className="settings-submenu">
-                <a
-                  href="#"
-                  className={`nav-link submenu-link ${
-                    isActive("Subcription") ? "active" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavigation("Subcription");
-                  }}
-                >
-                  <span className="nav-icon">
-                    <CreditCard size={18} />
-                  </span>
-                  <span className="nav-text">Mi Suscripción</span>
-                </a>
-              </div>
-            )}
+            {/* Submenu Suscripción (solo Admin Cliente) */}
+            {!isCollapsed &&
+              isSettingsOpen &&
+              hasModule("subscription") &&
+              userRole === "admin_cliente" && (
+                <div className="settings-submenu">
+                  <a
+                    href="#"
+                    className={`nav-link submenu-link ${
+                      isActive("Subcription") ? "active" : ""
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("Subcription");
+                    }}
+                  >
+                    <span className="nav-icon">
+                      <CreditCard size={18} />
+                    </span>
+                    <span className="nav-text">Mi Suscripción</span>
+                  </a>
+                </div>
+              )}
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../../admin-cliente/config/api";
 import "./Companies.css";
 import "/src/App.css";
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 const Companies = () => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -69,8 +71,9 @@ const Companies = () => {
         await api.put(`/empresas/${editingId}/`, formData);
         alert("Empresa actualizada exitosamente");
       } else {
-        await api.post("/empresas/", formData);
+        const res = await api.post("/empresas/", formData);
         alert("Empresa creada exitosamente");
+
       }
       setShowModal(false);
       setFormData(initialForm);

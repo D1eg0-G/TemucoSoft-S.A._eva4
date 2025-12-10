@@ -15,7 +15,7 @@ router.register(r'cajas', CajaViewSet)
 router.register(r'movimientos-caja', MovimientoCajaViewSet)
 router.register(r'sucursales', SucursalViewSet)
 router.register(r'usuarios', UsuarioViewSet)
-router.register(r'inventarios', InventarioViewSet)
+router.register(r'inventario', InventarioViewSet)
 router.register(r'venta_items', VentaItemViewSet)
 
 urlpatterns = [
